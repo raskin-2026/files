@@ -1,0 +1,2083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Takapoisa — Weekly Market Mood Calculator (টাকা পয়সা মার্কেট মুড ক্যালকুলেটর)</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', 'Noto Sans Bengali', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    .font-bn {
+      font-family: 'Noto Sans Bengali', 'Inter', sans-serif;
+    }
+    /* Custom range slider styling */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 9999px;
+      background: #e2e8f0;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #0f766e;
+      cursor: pointer;
+      border: 3px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+      transition: transform 0.15s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.12);
+    }
+    .mood-bar-gradient {
+      background: linear-gradient(90deg,
+        #10b981 0%, #10b981 20%,
+        #0ea5e9 20%, #0ea5e9 45%,
+        #f59e0b 45%, #f59e0b 65%,
+        #f97316 65%, #f97316 80%,
+        #ef4444 80%, #ef4444 100%
+      );
+    }
+    .mood-smooth-gradient {
+      background: linear-gradient(90deg,
+        #059669 0%,
+        #10b981 18%,
+        #0ea5e9 34%,
+        #eab308 55%,
+        #f97316 74%,
+        #dc2626 92%,
+        #991b1b 100%
+      );
+    }
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body {
+        background-color: #ffffff;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-teal-600 selection:text-white">
+
+  <!-- Top Brand Compliance Banner -->
+  <div class="bg-slate-900 text-slate-200 text-xs py-2 px-4 border-b border-slate-800">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span class="inline-flex items-center gap-1.5 font-semibold text-teal-400">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          TAKAPOISA (টাকা পয়সা)
+        </span>
+        <span class="text-slate-400">|</span>
+        <span>Rasbihari Sarkar · AMFI Reg. MFD &amp; SIF Distributor <strong class="text-white">ARN-160311</strong> (EUIN E296420)</span>
+        <span class="text-slate-400 hidden sm:inline">|</span>
+        <span>APMI Reg. PMS Distributor <strong class="text-white">APRN05577</strong></span>
+      </div>
+      <div class="flex items-center gap-3 text-slate-300">
+        <a href="tel:+919800709085" class="hover:text-teal-300 transition">+91 98007 09085</a>
+        <span>·</span>
+        <a href="mailto:sales@takapoisa.in" class="hover:text-teal-300 transition">sales@takapoisa.in</a>
+        <span>·</span>
+        <a href="https://www.takapoisa.in/" target="_blank" rel="noopener noreferrer" class="text-teal-400 hover:underline font-medium">takapoisa.in ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Navigation & Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <!-- Brand Logo & Title -->
+      <div class="flex items-center gap-3.5">
+  <!-- Dedicated logo -->
+        <img
+        src="logo.jpeg"
+        alt="Takapoisa logo"
+        class="h-12 w-auto shrink-0 object-contain"
+        />
+
+    <div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900">
+          Takapoisa Market Mood Calculator
+        </h1>
+        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200 font-bn">
+          টাকা পয়সা সাপ্তাহিক মার্কেট মুড
+        </span>
+      </div>
+      <p class="text-xs sm:text-sm text-slate-500" id="headerSubtitle">
+        Weekly Indian Equity Valuation &amp; Asset Allocation Gauge · সাপ্তাহিক বাজার মূল্যায়ন এবং বিনিয়োগ নির্দেশিকা
+      </p>
+    </div>
+  </div>
+
+      <!-- Controls: Language & Mode -->
+      <div class="flex flex-wrap items-center gap-2.5 no-print">
+        <!-- Language Toggle -->
+        <div class="inline-flex rounded-lg bg-slate-100 p-1 border border-slate-200" role="group" aria-label="Language Mode">
+          <button type="button" id="langBilingualBtn" class="px-2.5 py-1 text-xs font-semibold rounded-md bg-white text-slate-900 shadow-sm transition">
+            EN + বাংলা
+          </button>
+          <button type="button" id="langEnBtn" class="px-2.5 py-1 text-xs font-semibold rounded-md text-slate-600 hover:text-slate-900 transition">
+            English
+          </button>
+          <button type="button" id="langBnBtn" class="px-2.5 py-1 text-xs font-semibold rounded-md text-slate-600 hover:text-slate-900 transition font-bn">
+            বাংলা
+          </button>
+        </div>
+
+        <!-- Copy WhatsApp Summary Button -->
+        <button type="button" id="copyWhatsappBtn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+          </svg>
+          <span id="copyBtnLabel">Copy Weekly Client Note</span>
+        </button>
+
+        <!-- Print / Save PDF Button -->
+        <button type="button" id="printReportBtn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-900 text-white shadow-sm transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+          </svg>
+          <span>Print / PDF</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="max-w-7xl mx-auto w-full px-4 py-6 space-y-6 flex-1">
+
+    <!-- HERO SECTION: MASTER 5-ZONE MARKET MOOD COLOUR BAR -->
+    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+        <div>
+          <div class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-teal-700 bg-teal-50 px-2.5 py-1 rounded-md border border-teal-200 mb-2">
+            <span>Weekly Valuation Thermometer</span>
+            <span>·</span>
+            <span class="font-bn">সাপ্তাহিক মার্কেট মুড থার্মোমিটার</span>
+          </div>
+          <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900" id="heroTitle">
+            Live Market Mood Colour Bar
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-500 mt-0.5" id="heroDateLine">
+            Snapshot Week: <strong class="text-slate-700" id="activeWeekLabel">23 Oct 2026 (Live NSE Baseline)</strong> · Nifty 50: <strong class="text-slate-800" id="activeNiftyDisplay">22,687.65</strong>
+          </p>
+        </div>
+
+        <!-- Current Mood Big Badge -->
+        <div class="flex items-center gap-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+          <div class="text-right">
+            <div class="text-xs font-medium text-slate-500" id="scoreCaption">Composite Mood Score / স্কোর</div>
+            <div class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+              <span id="compositeScoreDisplay">18.4</span><span class="text-sm font-semibold text-slate-400"> / 100</span>
+            </div>
+          </div>
+          <div id="moodZonePill" class="px-4 py-2.5 rounded-xl text-white font-bold shadow-sm transition-colors duration-300 bg-emerald-600 text-center min-w-[165px]">
+            <div class="text-base sm:text-lg leading-tight" id="moodZoneTitle">CHEAP</div>
+            <div class="text-xs font-medium opacity-95 font-bn mt-0.5" id="moodZoneTitleBn">সস্তা (কেনার উপযুক্ত সময়)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- THE 5-ZONE COLOUR BAR -->
+      <div class="mt-6">
+        <div class="flex items-center justify-between text-xs font-semibold text-slate-500 mb-2">
+          <span class="text-emerald-700 font-bold">◀ 0 — Value Buying Zone (সস্তা)</span>
+          <span class="hidden sm:inline text-slate-600">Market Valuation Spectrum (বাজার মূল্যায়ন স্কেল)</span>
+          <span class="text-red-600 font-bold">100 — Euphoria / Bubble Zone (বাবল) ▶</span>
+        </div>
+
+        <!-- Segmented Labels Above Bar -->
+        <div class="grid grid-cols-5 text-center text-[11px] sm:text-xs font-bold mb-1.5">
+          <div class="text-emerald-700 px-1">
+            <div>1. CHEAP</div>
+            <div class="font-bn font-normal text-[11px] text-emerald-600" data-lang-bn>সস্তা (0–20)</div>
+          </div>
+          <div class="text-sky-700 px-1">
+            <div>2. FAIR VALUED</div>
+            <div class="font-bn font-normal text-[11px] text-sky-600" data-lang-bn>ন্যায্য মূল্য (21–45)</div>
+          </div>
+          <div class="text-amber-700 px-1">
+            <div>3. OVER VALUED</div>
+            <div class="font-bn font-normal text-[11px] text-amber-600" data-lang-bn>অতিমূল্যায়িত (46–65)</div>
+          </div>
+          <div class="text-orange-700 px-1">
+            <div>4. EXPENSIVE</div>
+            <div class="font-bn font-normal text-[11px] text-orange-600" data-lang-bn>ব্যয়বহুল (66–80)</div>
+          </div>
+          <div class="text-red-700 px-1">
+            <div>5. BUBBLE</div>
+            <div class="font-bn font-normal text-[11px] text-red-600" data-lang-bn>বাবল (81–100)</div>
+          </div>
+        </div>
+
+        <!-- Bar Track + Animated Pointer -->
+        <div class="relative pt-2 pb-7">
+          <!-- Segmented Colour Bar -->
+          <div class="h-9 sm:h-11 w-full rounded-xl overflow-hidden flex shadow-inner border border-slate-300/80">
+            <div class="h-full bg-emerald-500 flex flex-col items-center justify-center text-white text-[10px] sm:text-xs font-bold border-r border-white/40" style="width: 20%;">
+              <span>0–20</span>
+            </div>
+            <div class="h-full bg-sky-500 flex flex-col items-center justify-center text-white text-[10px] sm:text-xs font-bold border-r border-white/40" style="width: 25%;">
+              <span>21–45</span>
+            </div>
+            <div class="h-full bg-amber-500 flex flex-col items-center justify-center text-white text-[10px] sm:text-xs font-bold border-r border-white/40" style="width: 20%;">
+              <span>46–65</span>
+            </div>
+            <div class="h-full bg-orange-500 flex flex-col items-center justify-center text-white text-[10px] sm:text-xs font-bold border-r border-white/40" style="width: 15%;">
+              <span>66–80</span>
+            </div>
+            <div class="h-full bg-red-600 flex flex-col items-center justify-center text-white text-[10px] sm:text-xs font-bold" style="width: 20%;">
+              <span>81–100</span>
+            </div>
+          </div>
+
+          <!-- Dynamic Pointer Marker -->
+          <div id="moodPointerContainer" class="absolute top-0 transition-all duration-300 ease-out" style="left: 18.4%; transform: translateX(-50%);">
+            <div class="flex flex-col items-center">
+              <div id="pointerScoreBubble" class="px-2 py-0.5 rounded bg-slate-900 text-white text-[11px] font-extrabold shadow-md -mt-4 whitespace-nowrap border border-white">
+                ▼ 18.4
+              </div>
+              <div class="w-1.5 h-11 sm:h-13 bg-slate-900 rounded-full ring-2 ring-white shadow-lg"></div>
+              <div class="mt-1 px-2 py-0.5 rounded-full bg-slate-900 text-white text-[10px] font-bold shadow whitespace-nowrap" id="pointerLabelTag">
+                YOU ARE HERE
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5 Zone Interactive Cards Strip -->
+        <div class="grid grid-cols-1 sm:grid-cols-5 gap-2.5 mt-2" id="zoneCardsGrid">
+          <!-- Populated dynamically by JS to highlight active zone -->
+        </div>
+      </div>
+
+      <!-- Quick Scenario / Historical Preset Buttons -->
+      <div class="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 no-print">
+        <span class="text-xs font-semibold text-slate-500">
+          Test Historical &amp; Live Market Scenarios (ঐতিহাসিক বাজার পরিস্থিতি দেখুন):
+        </span>
+        <div class="flex flex-wrap gap-1.5">
+          <button type="button" data-preset="oct2026" class="preset-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100 transition">
+            🟢 Oct 23, 2026 (Live: Cheap)
+          </button>
+          <button type="button" data-preset="jul2025" class="preset-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-sky-50 hover:text-sky-800 transition">
+            🔵 Jul 2025 (Fair Valued)
+          </button>
+          <button type="button" data-preset="sep2024" class="preset-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-amber-50 hover:text-amber-800 transition">
+            🟡 Sep 2024 (Over Valued)
+          </button>
+          <button type="button" data-preset="jul2023" class="preset-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-orange-50 hover:text-orange-800 transition">
+            🟠 Jul 2023 (Expensive)
+          </button>
+          <button type="button" data-preset="feb2021" class="preset-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-red-50 hover:text-red-800 transition">
+            🔴 Feb 2021 (Bubble Peak)
+          </button>
+          <button type="button" data-preset="mar2020" class="preset-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-800 transition">
+            🟢 Mar 2020 (COVID Bottom)
+          </button>
+          <button type="button" data-preset="aug2013" class="preset-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-800 transition">
+            🟢 Aug 2013 (Taper Tantrum)
+          </button>
+          <button type="button" data-preset="oct2008" class="preset-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-800 transition">
+            🟢 Oct 2008 (GFC Crash Low)
+          </button>
+          <button type="button" data-preset="jan2008" class="preset-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-red-50 hover:text-red-800 transition">
+            🔴 Jan 2008 (GFC Peak)
+          </button>
+          <button type="button" data-preset="apr2003" class="preset-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-emerald-50 hover:text-emerald-800 transition">
+            🟢 Apr 2003 (Value Bottom)
+          </button>
+          <button type="button" data-preset="feb2000" class="preset-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-red-50 hover:text-red-800 transition">
+            🔴 Feb 2000 (Dot-Com Bubble)
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TWO-COLUMN CORE: WEEKLY INPUT CALCULATOR (LEFT) + CLIENT GUIDANCE & ALLOCATION (RIGHT) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- LEFT COLUMN (7 COLS): LIVE WEEKLY INDICATORS & INDIVIDUAL COLOUR BARS -->
+      <section class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 flex flex-col justify-between">
+        <div>
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-100">
+            <div>
+              <h3 class="text-base sm:text-lg font-bold text-slate-900">
+                Weekly Market Inputs &amp; Indicator Colour Bars
+              </h3>
+              <p class="text-xs text-slate-500 font-bn" data-lang-bn>
+                সাপ্তাহিক নিফটি ৫০ সূচকগুলোর মান পরিবর্তন করে লাইভ মার্কেট মুড দেখুন
+              </p>
+            </div>
+            <!-- Model Mode Toggle -->
+            <div class="inline-flex rounded-lg bg-slate-100 p-1 border border-slate-200 no-print">
+              <button type="button" id="mode5MetricBtn" class="px-2.5 py-1 text-xs font-semibold rounded-md bg-white text-teal-800 shadow-sm transition">
+                5-Factor Weekly Model
+              </button>
+              <button type="button" id="mode3MetricBtn" class="px-2.5 py-1 text-xs font-semibold rounded-md text-slate-600 hover:text-slate-900 transition">
+                3-Factor Core (PE/PB/DY)
+              </button>
+            </div>
+          </div>
+
+          <!-- Date & Nifty Index Input Row -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 my-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
+            <div>
+              <label for="weekDateInput" class="block text-xs font-semibold text-slate-700">
+                Weekly Review Date <span class="font-bn text-slate-500" data-lang-bn>(সাপ্তাহিক তারিখ)</span>
+              </label>
+              <input type="date" id="weekDateInput" value="2026-10-23" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-600" />
+            </div>
+            <div>
+              <label for="niftyIndexInput" class="block text-xs font-semibold text-slate-700">
+                Nifty 50 Index Close <span class="font-bn text-slate-500" data-lang-bn>(নিফটি ৫০ স্তর)</span>
+              </label>
+              <input type="number" id="niftyIndexInput" value="22687.65" step="10" min="5000" max="50000" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-600" />
+            </div>
+          </div>
+
+          <!-- Sliders Container -->
+          <div class="space-y-4">
+
+            <!-- 1. Nifty 50 P/E Ratio -->
+            <div class="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                <div>
+                  <span class="text-sm font-bold text-slate-900">1. Nifty 50 P/E Ratio (TTM)</span>
+                  <span class="text-xs text-slate-500 ml-1 font-bn" data-lang-bn>· মূল্য-আয় অনুপাত</span>
+                  <span class="ml-1.5 text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600" id="peWeightBadge">Weight: 40%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span id="peZoneTag" class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">Cheap</span>
+                  <input type="number" id="peInputNumber" value="19.13" min="12" max="45" step="0.05" aria-label="Nifty 50 PE Ratio" class="w-20 text-right font-bold text-sm border border-slate-300 rounded-lg px-2 py-1 text-slate-900" />
+                </div>
+              </div>
+              <input type="range" id="peSlider" min="14" max="34" step="0.05" value="19.13" />
+              <!-- Mini Colour Bar -->
+              <div class="mt-2 relative h-2.5 w-full rounded-full mood-bar-gradient">
+                <div id="peMiniPin" class="absolute -top-1 w-4 h-4 rounded-full bg-slate-900 border-2 border-white shadow" style="left: 18%; transform: translateX(-50%);"></div>
+              </div>
+              <div class="flex justify-between text-[11px] text-slate-500 mt-1">
+                <span>Cheap: &lt;20.0</span>
+                <span>Fair: 20–22.5</span>
+                <span>10Y Avg: <strong>23.25</strong></span>
+                <span>Expensive: 24.5–27</span>
+                <span>Bubble: &gt;27.0</span>
+              </div>
+            </div>
+
+            <!-- 2. Nifty 50 P/B Ratio -->
+            <div class="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                <div>
+                  <span class="text-sm font-bold text-slate-900">2. Nifty 50 P/B Ratio</span>
+                  <span class="text-xs text-slate-500 ml-1 font-bn" data-lang-bn>· মূল্য-বুক অনুপাত</span>
+                  <span class="ml-1.5 text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600" id="pbWeightBadge">Weight: 25%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span id="pbZoneTag" class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">Cheap</span>
+                  <input type="number" id="pbInputNumber" value="2.79" min="1.5" max="6.0" step="0.01" aria-label="Nifty 50 PB Ratio" class="w-20 text-right font-bold text-sm border border-slate-300 rounded-lg px-2 py-1 text-slate-900" />
+                </div>
+              </div>
+              <input type="range" id="pbSlider" min="2.0" max="5.0" step="0.01" value="2.79" />
+              <div class="mt-2 relative h-2.5 w-full rounded-full mood-bar-gradient">
+                <div id="pbMiniPin" class="absolute -top-1 w-4 h-4 rounded-full bg-slate-900 border-2 border-white shadow" style="left: 16%; transform: translateX(-50%);"></div>
+              </div>
+              <div class="flex justify-between text-[11px] text-slate-500 mt-1">
+                <span>Cheap: &lt;3.00</span>
+                <span>Fair: 3.0–3.5</span>
+                <span>10Y Avg: <strong>3.62</strong></span>
+                <span>Expensive: 3.9–4.3</span>
+                <span>Bubble: &gt;4.30</span>
+              </div>
+            </div>
+
+            <!-- 3. Nifty 50 Dividend Yield (%) -->
+            <div class="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                <div>
+                  <span class="text-sm font-bold text-slate-900">3. Nifty 50 Dividend Yield (%)</span>
+                  <span class="text-xs text-slate-500 ml-1 font-bn" data-lang-bn>· লভ্যাংশের হার (বিপরীত সূচক)</span>
+                  <span class="ml-1.5 text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600" id="dyWeightBadge">Weight: 15%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span id="dyZoneTag" class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">Cheap</span>
+                  <input type="number" id="dyInputNumber" value="1.50" min="0.50" max="3.00" step="0.01" aria-label="Nifty 50 Dividend Yield" class="w-20 text-right font-bold text-sm border border-slate-300 rounded-lg px-2 py-1 text-slate-900" />
+                </div>
+              </div>
+              <input type="range" id="dySlider" min="0.80" max="2.00" step="0.01" value="1.50" />
+              <div class="mt-2 relative h-2.5 w-full rounded-full mood-bar-gradient">
+                <div id="dyMiniPin" class="absolute -top-1 w-4 h-4 rounded-full bg-slate-900 border-2 border-white shadow" style="left: 18%; transform: translateX(-50%);"></div>
+              </div>
+              <div class="flex justify-between text-[11px] text-slate-500 mt-1">
+                <span>Cheap: &gt;1.45%</span>
+                <span>Fair: 1.25–1.45%</span>
+                <span>10Y Avg: <strong>1.25%</strong></span>
+                <span>Expensive: 0.95–1.10%</span>
+                <span>Bubble: &lt;0.95%</span>
+              </div>
+            </div>
+
+            <!-- 4. India VIX (Volatility Index) -->
+            <div id="vixCardBlock" class="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                <div>
+                  <span class="text-sm font-bold text-slate-900">4. India VIX (Fear / Complacency)</span>
+                  <span class="text-xs text-slate-500 ml-1 font-bn" data-lang-bn>· ইন্ডিয়া ভিক্স সূচক</span>
+                  <span class="ml-1.5 text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600" id="vixWeightBadge">Weight: 10%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span id="vixZoneTag" class="text-xs font-bold px-2 py-0.5 rounded bg-sky-100 text-sky-800">Fair Valued</span>
+                  <input type="number" id="vixInputNumber" value="16.39" min="8.0" max="40.0" step="0.05" aria-label="India VIX" class="w-20 text-right font-bold text-sm border border-slate-300 rounded-lg px-2 py-1 text-slate-900" />
+                </div>
+              </div>
+              <input type="range" id="vixSlider" min="10.0" max="28.0" step="0.05" value="16.39" />
+              <div class="mt-2 relative h-2.5 w-full rounded-full mood-bar-gradient">
+                <div id="vixMiniPin" class="absolute -top-1 w-4 h-4 rounded-full bg-slate-900 border-2 border-white shadow" style="left: 31%; transform: translateX(-50%);"></div>
+              </div>
+              <div class="flex justify-between text-[11px] text-slate-500 mt-1">
+                <span>Fear/Buy: &gt;18</span>
+                <span>Normal: 14–18</span>
+                <span>Complacent: 12–14</span>
+                <span>Greedy: &lt;11.5</span>
+              </div>
+            </div>
+
+            <!-- 5. India Buffett Indicator (Market Cap to GDP %) -->
+            <div id="buffettCardBlock" class="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                <div>
+                  <span class="text-sm font-bold text-slate-900">5. Market Cap-to-GDP (Buffett Indicator %)</span>
+                  <span class="text-xs text-slate-500 ml-1 font-bn" data-lang-bn>· মার্কেট ক্যাপ ও জিডিপি অনুপাত</span>
+                  <span class="ml-1.5 text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600" id="buffettWeightBadge">Weight: 10%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span id="buffettZoneTag" class="text-xs font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800">Over Valued</span>
+                  <input type="number" id="buffettInputNumber" value="132.2" min="50" max="200" step="0.1" aria-label="Buffett Indicator Percentage" class="w-20 text-right font-bold text-sm border border-slate-300 rounded-lg px-2 py-1 text-slate-900" />
+                </div>
+              </div>
+              <input type="range" id="buffettSlider" min="80" max="165" step="0.2" value="132.2" />
+              <div class="mt-2 relative h-2.5 w-full rounded-full mood-bar-gradient">
+                <div id="buffettMiniPin" class="absolute -top-1 w-4 h-4 rounded-full bg-slate-900 border-2 border-white shadow" style="left: 59%; transform: translateX(-50%);"></div>
+              </div>
+              <div class="flex justify-between text-[11px] text-slate-500 mt-1">
+                <span>Cheap: &lt;95%</span>
+                <span>Fair: 95–115%</span>
+                <span>Overvalued: 115–135%</span>
+                <span>Expensive: 135–148%</span>
+                <span>Bubble: &gt;148%</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Save to Weekly Log Footer Bar -->
+        <div class="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 no-print">
+          <div class="text-xs text-slate-500">
+            Data grounded in <a href="https://www.nseindia.com/reports-indices-historical-index-data" target="_blank" rel="noopener noreferrer" class="text-teal-700 font-semibold hover:underline">NSE</a>, <a href="https://craytheon.com/charts/nifty-pe-ratio/" target="_blank" rel="noopener noreferrer" class="text-teal-700 font-semibold hover:underline">Craytheon</a>, <a href="https://nifty-pe-ratio.com/" target="_blank" rel="noopener noreferrer" class="text-teal-700 font-semibold hover:underline">Nifty-PE-Ratio</a> &amp; <a href="https://www.kotakneo.com/indices/indian-indices/india-vix/" target="_blank" rel="noopener noreferrer" class="text-teal-700 font-semibold hover:underline">Kotak Neo</a>.
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" id="resetBaselineBtn" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition">
+              Reset to Oct 23 Live
+            </button>
+            <button type="button" id="saveWeekLogBtn" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 shadow-sm transition">
+              + Log This Week's Reading
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN (5 COLS): TAKAPOISA CLIENT GUIDANCE & PORTFOLIO ALLOCATION SIMULATOR -->
+      <section class="lg:col-span-5 flex flex-col gap-6">
+
+        <!-- Client Action Card -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 flex-1 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between gap-2 pb-3.5 border-b border-slate-100">
+              <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-teal-700">Takapoisa Client Advisory</span>
+                <h3 class="text-base sm:text-lg font-bold text-slate-900">
+                  Suggested Weekly Allocation &amp; Actions
+                </h3>
+                <p class="text-xs text-slate-500 font-bn" data-lang-bn>
+                  বিনিয়োগকারীদের জন্য প্রস্তাবিত সম্পদ বরাদ্দ ও পদক্ষেপ
+                </p>
+              </div>
+              <div id="advisoryBadgeSmall" class="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800">
+                CHEAP ZONE
+              </div>
+            </div>
+
+            <!-- Executive Summary Box (EN + BN) -->
+            <div id="advisorySummaryBox" class="mt-4 p-4 rounded-xl bg-emerald-50/80 border border-emerald-200">
+              <div class="text-sm font-bold text-slate-900" id="advisoryHeadlineEn">
+                High-Conviction Accumulation Zone: Valuations are 17.7% below the 10-year P/E average.
+              </div>
+              <div class="text-xs text-slate-700 mt-1.5 font-bn leading-relaxed" id="advisoryHeadlineBn" data-lang-bn>
+                এটি দীর্ঘমেয়াদী বিনিয়োগের জন্য অত্যন্ত আকর্ষণীয় সময়। নিফটি P/E ১০ বছরের গড় থেকে ১৭.৭% নিচে রয়েছে—লাম্পসাম ও অতিরিক্ত SIP বিনিয়োগের উপযুক্ত সুযোগ।
+              </div>
+            </div>
+
+            <!-- Visual Recommended Asset Split Bar -->
+            <div class="mt-5">
+              <div class="flex items-center justify-between text-xs font-bold text-slate-700 mb-1.5">
+                <span>Recommended Fresh Deployment Split (নতুন বিনিয়োগের অনুপাত)</span>
+                <span id="profileLabelTag" class="text-teal-700">Moderate-Growth</span>
+              </div>
+              <div class="h-7 w-full rounded-lg overflow-hidden flex text-[11px] font-bold text-white shadow-inner">
+                <div id="allocEquityBar" class="bg-emerald-600 flex items-center justify-center transition-all duration-300" style="width: 75%;">
+                  Equity 75%
+                </div>
+                <div id="allocHybridBar" class="bg-sky-600 flex items-center justify-center transition-all duration-300" style="width: 15%;">
+                  SIF/Hybrid 15%
+                </div>
+                <div id="allocDebtBar" class="bg-amber-600 flex items-center justify-center transition-all duration-300" style="width: 10%;">
+                  Debt/FD 10%
+                </div>
+              </div>
+              <div class="flex justify-between text-[11px] text-slate-500 mt-1.5">
+                <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-600"></span> Equity MF / PMS</span>
+                <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-sky-600"></span> SIF Long-Short / Hybrid</span>
+                <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-amber-600"></span> Corp. Bonds / FDs</span>
+              </div>
+            </div>
+
+            <!-- Product-Specific Action Directives -->
+            <div class="mt-5 space-y-2.5" id="productDirectivesList">
+              <!-- Populated dynamically by JS -->
+            </div>
+          </div>
+
+          <!-- Interactive Client Rupee Allocation Calculator -->
+          <div class="mt-6 pt-4 border-t border-slate-200">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-2.5">
+              Client Deployment Calculator · ক্লায়েন্ট বিনিয়োগ ক্যালকুলেটর (₹)
+            </h4>
+            <div class="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label for="lumpsumAmountInput" class="block text-[11px] font-semibold text-slate-600">
+                  Fresh Lumpsum (₹) <span class="font-bn" data-lang-bn>/ এককালীন</span>
+                </label>
+                <input type="number" id="lumpsumAmountInput" value="500000" step="25000" min="0" class="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm font-bold text-slate-900" />
+              </div>
+              <div>
+                <label for="sipAmountInput" class="block text-[11px] font-semibold text-slate-600">
+                  Monthly SIP (₹) <span class="font-bn" data-lang-bn>/ মাসিক SIP</span>
+                </label>
+                <input type="number" id="sipAmountInput" value="25000" step="1000" min="0" class="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm font-bold text-slate-900" />
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+              <div>
+                <div class="text-[10px] font-semibold text-slate-500">Equity MFs / PMS</div>
+                <div class="text-xs sm:text-sm font-extrabold text-emerald-700" id="rupeeEquityOut">₹3,75,000</div>
+                <div class="text-[10px] text-slate-500" id="sipEquityOut">SIP: ₹27,500/m</div>
+              </div>
+              <div class="border-x border-slate-200 px-1">
+                <div class="text-[10px] font-semibold text-slate-500">SIF / Hybrid Funds</div>
+                <div class="text-xs sm:text-sm font-extrabold text-sky-700" id="rupeeHybridOut">₹75,000</div>
+                <div class="text-[10px] text-slate-500" id="stageNoteOut">Direct / 3M STP</div>
+              </div>
+              <div>
+                <div class="text-[10px] font-semibold text-slate-500">Bonds / Corp. FD</div>
+                <div class="text-xs sm:text-sm font-extrabold text-amber-700" id="rupeeDebtOut">₹50,000</div>
+                <div class="text-[10px] text-slate-500">Reserve / Fixed</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+
+    <!-- WEEKLY HISTORICAL TRACKER & 5-ZONE REFERENCE TABLE -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Weekly & Multi-Decade Mood History Chart & Log (7 cols) -->
+      <section class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div>
+            <h3 class="text-base sm:text-lg font-bold text-slate-900" id="trajectoryChartTitle">
+              30-Year &amp; Weekly Market Mood Trajectory (1996–2026)
+            </h3>
+            <p class="text-xs text-slate-500 font-bn" data-lang-bn id="trajectoryChartSubtitle">
+              গত ৩০ বছরের (১৯৯৬–২০২৬) এবং সাপ্তাহিক মার্কেট মুড ও নিফটি P/E প্রবণতা
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 no-print">
+            <div class="inline-flex rounded-lg bg-slate-100 p-1 border border-slate-200" role="group" aria-label="Chart Timeframe">
+              <button type="button" id="tfWeeklyBtn" class="px-2 py-1 text-[11px] font-semibold rounded-md text-slate-600 hover:text-slate-900 transition">
+                2026 Weekly
+              </button>
+              <button type="button" id="tf5YBtn" class="px-2 py-1 text-[11px] font-semibold rounded-md text-slate-600 hover:text-slate-900 transition">
+                5Y
+              </button>
+              <button type="button" id="tf10YBtn" class="px-2 py-1 text-[11px] font-semibold rounded-md text-slate-600 hover:text-slate-900 transition">
+                10Y
+              </button>
+              <button type="button" id="tf20YBtn" class="px-2 py-1 text-[11px] font-semibold rounded-md text-slate-600 hover:text-slate-900 transition">
+                20Y
+              </button>
+              <button type="button" id="tf30YBtn" class="px-2 py-1 text-[11px] font-semibold rounded-md bg-white text-teal-800 shadow-sm transition">
+                30Y (1996–2026)
+              </button>
+            </div>
+            <button type="button" id="exportCsvBtn" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+              ⬇ Download Weekly Log (.CSV)
+            </button>
+          </div>
+        </div>
+
+        <!-- Fixed height chart container per Web App Core Rule 4 -->
+        <div class="relative h-64 w-full">
+          <canvas id="weeklyMoodChart"></canvas>
+        </div>
+
+        <!-- Logged Weeks Table -->
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-slate-200 text-slate-500 bg-slate-50">
+                <th class="py-2 px-2.5 font-semibold">Week Date</th>
+                <th class="py-2 px-2.5 font-semibold">Nifty 50</th>
+                <th class="py-2 px-2.5 font-semibold">P/E</th>
+                <th class="py-2 px-2.5 font-semibold">P/B</th>
+                <th class="py-2 px-2.5 font-semibold">Div. Yield</th>
+                <th class="py-2 px-2.5 font-semibold">Score</th>
+                <th class="py-2 px-2.5 font-semibold">Market Mood Zone</th>
+              </tr>
+            </thead>
+            <tbody id="weeklyLogTableBody" class="divide-y divide-slate-100">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Complete 5-Zone Colour Reference Matrix (5 cols) -->
+      <section class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6">
+        <h3 class="text-base sm:text-lg font-bold text-slate-900">
+          Takapoisa 5-Zone Colour Bar Reference Guide
+        </h3>
+        <p class="text-xs text-slate-500 font-bn mb-4" data-lang-bn>
+          ৫টি মার্কেট মুড জোনের সম্পূর্ণ সূচক এবং বিনিয়োগ নির্দেশিকা
+        </p>
+
+        <div class="space-y-3 text-xs">
+          <div class="p-3 rounded-xl border-l-4 border-emerald-500 bg-emerald-50/50">
+            <div class="flex justify-between font-bold text-emerald-900">
+              <span>1. CHEAP (সস্তা) · Score 0–20</span>
+              <span>PE &lt; 20 | PB &lt; 3.0</span>
+            </div>
+            <p class="text-slate-600 mt-1">
+              <strong>Action:</strong> Deploy lumpsums, step-up Equity SIPs by +10–20%, allocate aggressively to Flexi-Cap, Mid/Small-Cap MFs &amp; PMS.
+            </p>
+            <p class="text-slate-600 font-bn mt-0.5" data-lang-bn>
+              <strong>পদক্ষেপ:</strong> এককালীন অর্থ বিনিয়োগ করুন এবং ইক্যুইটি SIP বৃদ্ধি করুন।
+            </p>
+          </div>
+
+          <div class="p-3 rounded-xl border-l-4 border-sky-500 bg-sky-50/50">
+            <div class="flex justify-between font-bold text-sky-900">
+              <span>2. FAIR VALUED (ন্যায্য মূল্য) · Score 21–45</span>
+              <span>PE 20–22.5 | PB 3.0–3.5</span>
+            </div>
+            <p class="text-slate-600 mt-1">
+              <strong>Action:</strong> Continue regular goal-based SIPs; deploy lumpsums in 3-month STPs across Large &amp; Flexi-Cap funds.
+            </p>
+            <p class="text-slate-600 font-bn mt-0.5" data-lang-bn>
+              <strong>পদক্ষেপ:</strong> নিয়মিত SIP চালিয়ে যান এবং লক্ষ্য অনুযায়ী বিনিয়োগ বজায় রাখুন।
+            </p>
+          </div>
+
+          <div class="p-3 rounded-xl border-l-4 border-amber-500 bg-amber-50/50">
+            <div class="flex justify-between font-bold text-amber-900">
+              <span>3. OVER VALUED (অতিমূল্যায়িত) · Score 46–65</span>
+              <span>PE 22.5–24.5 | PB 3.5–3.9</span>
+            </div>
+            <p class="text-slate-600 mt-1">
+              <strong>Action:</strong> Maintain existing SIPs; stagger fresh capital via 6–12M STPs; favor Balanced Advantage &amp; Multi-Asset Allocation funds.
+            </p>
+            <p class="text-slate-600 font-bn mt-0.5" data-lang-bn>
+              <strong>পদক্ষেপ:</strong> নতুন এককালীন বিনিয়োগ ৬-১২ মাসের STP-এর মাধ্যমে করুন; হাইব্রিড ফান্ডে গুরুত্ব দিন।
+            </p>
+          </div>
+
+          <div class="p-3 rounded-xl border-l-4 border-orange-500 bg-orange-50/50">
+            <div class="flex justify-between font-bold text-orange-900">
+              <span>4. EXPENSIVE (ব্যয়বহুল) · Score 66–80</span>
+              <span>PE 24.5–27.0 | PB 3.9–4.3</span>
+            </div>
+            <p class="text-slate-600 mt-1">
+              <strong>Action:</strong> Avoid pure-equity lumpsums; shift incremental inflows into SIF Long-Short strategies, Arbitrage funds, Corporate Bonds &amp; FDs.
+            </p>
+            <p class="text-slate-600 font-bn mt-0.5" data-lang-bn>
+              <strong>পদক্ষেপ:</strong> সরাসরি ইক্যুইটি লাম্পসাম এড়িয়ে চলুন; SIF লং-শর্ট ফান্ড ও বন্ডে বিনিয়োগ করুন।
+            </p>
+          </div>
+
+          <div class="p-3 rounded-xl border-l-4 border-red-600 bg-red-50/50">
+            <div class="flex justify-between font-bold text-red-900">
+              <span>5. BUBBLE (বাবল / চরম ঝুঁকি) · Score 81–100</span>
+              <span>PE &gt; 27.0 | PB &gt; 4.3</span>
+            </div>
+            <p class="text-slate-600 mt-1">
+              <strong>Action:</strong> Book partial profits from overweight Small/Mid-Cap equity; park gains safely in Short-Duration Debt, Corporate Bonds &amp; Fixed Deposits.
+            </p>
+            <p class="text-slate-600 font-bn mt-0.5" data-lang-bn>
+              <strong>পদক্ষেপ:</strong> অতিরিক্ত ইক্যুইটি থেকে আংশিক মুনাফা তুলে নিরাপদ ডেট ফান্ড বা ফিক্সড ডিপোজিটে রাখুন।
+            </p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+
+    <!-- 30-YEAR HISTORICAL MARKET MOOD COLOUR BAR & CYCLE EXPLORER (1996–2026) -->
+    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 space-y-5">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+        <div>
+          <div class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-teal-700 bg-teal-50 px-2.5 py-1 rounded-md border border-teal-200 mb-1.5">
+            <span>30-Year Nifty 50 Valuation Archive (1996–2026)</span>
+            <span>·</span>
+            <span class="font-bn">গত ৩০ বছরের মার্কেট মুড ইতিহাস</span>
+          </div>
+          <h3 class="text-lg sm:text-xl font-extrabold text-slate-900">
+            Last 30 Years Market Mood Colour Bar (1996 – 2026)
+          </h3>
+          <p class="text-xs sm:text-sm text-slate-500">
+            Click any year block below to load that year's Nifty 50 valuation into the live calculator · <span class="font-bn" data-lang-bn>যেকোনো বছরের ব্লকে ক্লিক করে সেই বছরের মার্কেট মুড ক্যালকুলেটরে দেখুন</span>
+          </p>
+        </div>
+
+        <!-- 30-Year Zone Share Summary Pills -->
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <span class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold">
+            🟢 Cheap: 10 Yrs (32%)
+          </span>
+          <span class="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-800 border border-sky-200 font-bold">
+            🔵 Fair: 11 Yrs (35%)
+          </span>
+          <span class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 font-bold">
+            🟡 Overvalued: 5 Yrs (16%)
+          </span>
+          <span class="px-2.5 py-1 rounded-lg bg-orange-50 text-orange-800 border border-orange-200 font-bold">
+            🟠 Expensive: 3 Yrs (10%)
+          </span>
+          <span class="px-2.5 py-1 rounded-lg bg-red-50 text-red-800 border border-red-200 font-bold">
+            🔴 Bubble: 2 Yrs (6%)
+          </span>
+        </div>
+      </div>
+
+      <!-- Interactive 31-Block Colour Bar Strip (1996 to 2026) -->
+      <div>
+        <div class="text-xs font-semibold text-slate-500 mb-2 flex items-center justify-between">
+          <span>◀ 1996 (Nifty 50 Launch)</span>
+          <span class="font-bn" data-lang-bn>বার্ষিক মার্কেট মুড হিটম্যাপ (১৯৯৬ – ২০২৬)</span>
+          <span>2026 (Current Live) ▶</span>
+        </div>
+        <div id="thirtyYearHeatmapGrid" class="grid grid-cols-6 sm:grid-cols-11 lg:grid-cols-16 gap-1.5">
+          <!-- Populated dynamically by JS -->
+        </div>
+      </div>
+
+      <!-- Multi-Timeframe Historical P/E Medians + Major 30-Year Cycle Turning Points -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-3 border-t border-slate-100">
+
+        <!-- Multi-Horizon Median Comparison (5 cols) -->
+        <div class="lg:col-span-5 bg-slate-50 rounded-xl p-4 border border-slate-200">
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-800 mb-1">
+            Current P/E (19.13) vs. 30-Year Historical Horizons
+          </h4>
+          <p class="text-[11px] text-slate-500 font-bn mb-3" data-lang-bn>
+            বিভিন্ন সময়কালের গড় P/E-এর সাথে বর্তমান বাজারের তুলনা
+          </p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b border-slate-200 text-slate-500">
+                  <th class="py-1.5 pr-2 font-semibold">Timeframe</th>
+                  <th class="py-1.5 px-2 font-semibold">Median P/E</th>
+                  <th class="py-1.5 px-2 font-semibold">P/E Range</th>
+                  <th class="py-1.5 pl-2 font-semibold text-right">Current vs Median</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200/70">
+                <tr>
+                  <td class="py-2 pr-2 font-bold text-slate-800">30 Years (1996–2026)</td>
+                  <td class="py-2 px-2 font-semibold">20.88</td>
+                  <td class="py-2 px-2 text-slate-500">10.7 – 42.0</td>
+                  <td class="py-2 pl-2 text-right font-bold text-emerald-700">-8.4% (Cheaper)</td>
+                </tr>
+                <tr>
+                  <td class="py-2 pr-2 font-bold text-slate-800">20 Years (2006–2026)</td>
+                  <td class="py-2 px-2 font-semibold">21.45</td>
+                  <td class="py-2 px-2 text-slate-500">10.7 – 42.0</td>
+                  <td class="py-2 pl-2 text-right font-bold text-emerald-700">-10.8% (Cheaper)</td>
+                </tr>
+                <tr>
+                  <td class="py-2 pr-2 font-bold text-slate-800">15 Years (2011–2026)</td>
+                  <td class="py-2 px-2 font-semibold">22.32</td>
+                  <td class="py-2 px-2 text-slate-500">16.1 – 42.0</td>
+                  <td class="py-2 pl-2 text-right font-bold text-emerald-700">-14.3% (Cheaper)</td>
+                </tr>
+                <tr>
+                  <td class="py-2 pr-2 font-bold text-slate-800">10 Years (2016–2026)</td>
+                  <td class="py-2 px-2 font-semibold">23.25</td>
+                  <td class="py-2 px-2 text-slate-500">17.15 – 42.0</td>
+                  <td class="py-2 pl-2 text-right font-bold text-emerald-700">-17.7% (Cheaper)</td>
+                </tr>
+                <tr>
+                  <td class="py-2 pr-2 font-bold text-slate-800">5 Years (2021–2026)</td>
+                  <td class="py-2 px-2 font-semibold">21.94</td>
+                  <td class="py-2 px-2 text-slate-500">19.05 – 42.0</td>
+                  <td class="py-2 pl-2 text-right font-bold text-emerald-700">-12.8% (Cheaper)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="mt-3 p-2.5 rounded-lg bg-emerald-100/70 border border-emerald-200 text-[11px] text-emerald-900">
+            <strong>30-Year Insight:</strong> Since June 1999, Nifty 50 TRI has delivered <strong>~14.2% CAGR</strong>. Investing when Market Mood is in the <strong>Cheap (&lt;20 P/E)</strong> zone has historically produced the highest 3-to-5 year forward returns.
+          </div>
+        </div>
+
+        <!-- Major 30-Year Market Cycle Landmarks & Forward Return Evidence (7 cols) -->
+        <div class="lg:col-span-7 bg-slate-50 rounded-xl p-4 border border-slate-200">
+          <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-800 mb-1">
+            Major 30-Year Cycle Peaks &amp; Troughs (What Happened Next)
+          </h4>
+          <p class="text-[11px] text-slate-500 font-bn mb-3" data-lang-bn>
+            গত ৩০ বছরের প্রধান বাজার উত্থান-পতন এবং পরবর্তী ৩ বছরের ফলাফল
+          </p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b border-slate-200 text-slate-500">
+                  <th class="py-1.5 pr-2 font-semibold">Cycle Event &amp; Date</th>
+                  <th class="py-1.5 px-2 font-semibold">Nifty 50</th>
+                  <th class="py-1.5 px-2 font-semibold">P/E</th>
+                  <th class="py-1.5 px-2 font-semibold">P/B</th>
+                  <th class="py-1.5 px-2 font-semibold">Market Mood</th>
+                  <th class="py-1.5 pl-2 font-semibold">Subsequent Market Outcome</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200/70">
+                <tr class="hover:bg-white cursor-pointer transition" data-cycle-preset="feb2000">
+                  <td class="py-2 pr-2 font-bold text-slate-800">Feb 2000 · Dot-Com Peak</td>
+                  <td class="py-2 px-2">1,756</td>
+                  <td class="py-2 px-2 font-bold text-red-700">28.4</td>
+                  <td class="py-2 px-2">4.60</td>
+                  <td class="py-2 px-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800">BUBBLE</span></td>
+                  <td class="py-2 pl-2 text-slate-600">-47% drawdown over next 3 years</td>
+                </tr>
+                <tr class="hover:bg-white cursor-pointer transition" data-cycle-preset="apr2003">
+                  <td class="py-2 pr-2 font-bold text-slate-800">Apr 2003 · Value Trough</td>
+                  <td class="py-2 px-2">924</td>
+                  <td class="py-2 px-2 font-bold text-emerald-700">11.2</td>
+                  <td class="py-2 px-2">2.10</td>
+                  <td class="py-2 px-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">CHEAP</span></td>
+                  <td class="py-2 pl-2 text-emerald-800 font-semibold">+580% bull run (2003–2008)</td>
+                </tr>
+                <tr class="hover:bg-white cursor-pointer transition" data-cycle-preset="jan2008">
+                  <td class="py-2 pr-2 font-bold text-slate-800">Jan 2008 · Pre-GFC Peak</td>
+                  <td class="py-2 px-2">6,287</td>
+                  <td class="py-2 px-2 font-bold text-red-700">28.3</td>
+                  <td class="py-2 px-2">6.50</td>
+                  <td class="py-2 px-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800">BUBBLE</span></td>
+                  <td class="py-2 pl-2 text-slate-600">-51.3% calendar fall in 2008</td>
+                </tr>
+                <tr class="hover:bg-white cursor-pointer transition" data-cycle-preset="oct2008">
+                  <td class="py-2 pr-2 font-bold text-slate-800">Oct 2008 · GFC Crash Low</td>
+                  <td class="py-2 px-2">2,524</td>
+                  <td class="py-2 px-2 font-bold text-emerald-700">10.7</td>
+                  <td class="py-2 px-2">2.15</td>
+                  <td class="py-2 px-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">CHEAP</span></td>
+                  <td class="py-2 pl-2 text-emerald-800 font-semibold">+77.6% TRI rebound in 2009</td>
+                </tr>
+                <tr class="hover:bg-white cursor-pointer transition" data-cycle-preset="aug2013">
+                  <td class="py-2 pr-2 font-bold text-slate-800">Aug 2013 · Taper Tantrum</td>
+                  <td class="py-2 px-2">5,471</td>
+                  <td class="py-2 px-2 font-bold text-emerald-700">16.1</td>
+                  <td class="py-2 px-2">2.75</td>
+                  <td class="py-2 px-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">CHEAP</span></td>
+                  <td class="py-2 pl-2 text-emerald-800 font-semibold">+62% rally over 2014–2015</td>
+                </tr>
+                <tr class="hover:bg-white cursor-pointer transition" data-cycle-preset="mar2020">
+                  <td class="py-2 pr-2 font-bold text-slate-800">Mar 2020 · COVID-19 Low</td>
+                  <td class="py-2 px-2">7,511</td>
+                  <td class="py-2 px-2 font-bold text-emerald-700">17.15</td>
+                  <td class="py-2 px-2">2.17</td>
+                  <td class="py-2 px-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">CHEAP</span></td>
+                  <td class="py-2 pl-2 text-emerald-800 font-semibold">+145% surge over next 18 months</td>
+                </tr>
+                <tr class="hover:bg-white cursor-pointer transition" data-cycle-preset="feb2021">
+                  <td class="py-2 pr-2 font-bold text-slate-800">Feb 2021 · Stimulus Peak</td>
+                  <td class="py-2 px-2">15,116</td>
+                  <td class="py-2 px-2 font-bold text-red-700">40.80</td>
+                  <td class="py-2 px-2">4.42</td>
+                  <td class="py-2 px-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800">BUBBLE</span></td>
+                  <td class="py-2 pl-2 text-slate-600">Valuation time-correction in 2022</td>
+                </tr>
+                <tr class="hover:bg-white cursor-pointer transition" data-cycle-preset="oct2026">
+                  <td class="py-2 pr-2 font-bold text-teal-900">Oct 2026 · Current Live</td>
+                  <td class="py-2 px-2 font-bold">22,688</td>
+                  <td class="py-2 px-2 font-bold text-emerald-700">19.13</td>
+                  <td class="py-2 px-2 font-bold text-emerald-700">2.79</td>
+                  <td class="py-2 px-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">CHEAP</span></td>
+                  <td class="py-2 pl-2 text-teal-800 font-semibold">High-conviction accumulation zone</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- Toast Notification for Clipboard / Log Actions -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 hidden bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl border border-slate-700 text-xs font-semibold flex items-center gap-2.5">
+    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+    <span id="toastMessageText">Copied weekly client summary!</span>
+  </div>
+
+  <!-- OFFICIAL TAKAPOISA COMPLIANCE & REGISTRATION FOOTER -->
+  <footer class="bg-slate-900 text-slate-300 mt-10 border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 py-8 space-y-5 text-xs">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pb-6 border-b border-slate-800">
+        <!-- Col 1: Brand & Advisor Credentials -->
+        <div>
+          <div class="text-base font-extrabold text-white tracking-tight flex items-center gap-2">
+            <span>TAKAPOISA (টাকা পয়সা)</span>
+          </div>
+          <p class="text-slate-400 mt-1">
+            Financial planning that starts with your goals · ১০ বছরের অভিজ্ঞতায় ভারতীয় পরিবারগুলোর জন্য লক্ষ্যভিত্তিক আর্থিক পরিকল্পনা।
+          </p>
+          <div class="mt-3 space-y-1 text-slate-200 font-medium">
+            <div><strong>Advisor / Distributor:</strong> Rasbihari Sarkar</div>
+            <div><strong>AMFI Reg. MFD &amp; SIF Distributor:</strong> ARN-160311 (EUIN: E296420)</div>
+            <div><strong>APMI Reg. PMS Distributor:</strong> APRN05577</div>
+          </div>
+        </div>
+
+        <!-- Col 2: Contact & Office Details -->
+        <div>
+          <div class="font-bold text-white uppercase tracking-wider mb-2">Contact &amp; Office · যোগাযোগ</div>
+          <ul class="space-y-1.5 text-slate-300">
+            <li><strong>Address:</strong> Nabagram Jhill Road, P.O. Panchpota, Garia Station, Kolkata - 700152</li>
+            <li><strong>Phone / WhatsApp:</strong> <a href="tel:+919800709085" class="text-teal-400 hover:underline">+91 98007 09085</a> (Mon–Sat, 09:30–18:30 IST)</li>
+            <li><strong>Email:</strong> <a href="mailto:sales@takapoisa.in" class="text-teal-400 hover:underline">sales@takapoisa.in</a></li>
+            <li><strong>Website:</strong> <a href="https://www.takapoisa.in/" target="_blank" rel="noopener noreferrer" class="text-teal-400 hover:underline">https://www.takapoisa.in/</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 3: Offerings & Regulatory Disclosures -->
+        <div>
+          <div class="font-bold text-white uppercase tracking-wider mb-2">Services &amp; Statutory Notice · বিধিবদ্ধ সতর্কীকরণ</div>
+          <p class="text-slate-400 leading-relaxed">
+            Mutual Funds · Specialized Investment Funds (SIF) · Portfolio Management Services (PMS) · Corporate Bonds · Fixed Deposits · Market Linked Debentures · Protection &amp; Insurance.
+          </p>
+          <p class="text-amber-300/90 mt-2 font-medium">
+            *Mutual fund investments are subject to market risks. Read all scheme related documents carefully. (মিউচুয়াল ফান্ড বিনিয়োগ বাজারগত ঝুঁকির অধীন। বিনিয়োগের আগে সমস্ত স্কিম সংক্রান্ত নথি মনোযোগ সহকারে পড়ুন।)
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-slate-400 text-[11px]">
+        <div>
+          © 2026 Takapoisa · Rasbihari Sarkar (ARN-160311 · APRN05577). Calculator outputs are educational valuation illustrations, not assured return projections.
+        </div>
+        <div class="flex gap-3">
+          <a href="https://www.takapoisa.in/" target="_blank" rel="noopener noreferrer" class="hover:text-white">Takapoisa Home</a>
+          <span>·</span>
+          <a href="https://www.nseindia.com/reports-indices-historical-index-data" target="_blank" rel="noopener noreferrer" class="hover:text-white">NSE Data</a>
+          <span>·</span>
+          <a href="https://craytheon.com/charts/nifty-pe-ratio/" target="_blank" rel="noopener noreferrer" class="hover:text-white">10Y PE History</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- APPLICATION LOGIC -->
+  <script>
+    // 5 Market Mood Zones Definition
+    const MOOD_ZONES = [
+      {
+        id: 'cheap',
+        index: 1,
+        maxScore: 20,
+        rangeText: '0 – 20',
+        nameEn: 'CHEAP',
+        nameBn: 'সস্তা (কেনার সেরা সময়)',
+        shortBn: 'সস্তা',
+        bgClass: 'bg-emerald-600',
+        badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+        cardBorder: 'border-emerald-500 bg-emerald-50/70',
+        hex: '#10b981',
+        alloc: { equity: 75, hybrid: 15, debt: 10, sipBoost: 1.15, stpNote: 'Direct / 2M STP' },
+        headlineEn: 'High-Conviction Buying Zone: Market valuations are significantly below historical averages.',
+        headlineBn: 'দীর্ঘমেয়াদী বিনিয়োগের জন্য চমৎকার সুযোগ। বাজারের মূল্যায়ন ১০ বছরের গড় থেকে অনেক নিচে—এককালীন (Lumpsum) ও অতিরিক্ত SIP বিনিয়োগের উপযুক্ত সময়।',
+        directives: [
+          {
+            product: 'Equity Mutual Funds (SIP & Lumpsum)',
+            actionEn: 'Deploy fresh lumpsum capital immediately (or via 2-month STP) and top-up ongoing Equity SIPs by +15%. Focus on Flexi-Cap, Large & Mid-Cap, and Value funds.',
+            actionBn: 'নতুন এককালীন তহবিল বিনিয়োগ করুন এবং চলমান ইক্যুইটি SIP ১৫% বৃদ্ধি করুন।'
+          },
+          {
+            product: 'PMS (APRN05577) & SIF Strategies',
+            actionEn: 'Favour high-conviction long-only Equity PMS and growth-oriented SIF mandates to capture cyclical multiple expansion.',
+            actionBn: 'উচ্চ-প্রবৃদ্ধির ইক্যুইটি PMS এবং SIF তহবিলে বরাদ্দ বাড়ান।'
+          },
+          {
+            product: 'Corporate Bonds & Fixed Deposits',
+            actionEn: 'Keep only mandatory emergency corpus (10%) in liquid/short-duration debt; shift surplus maturity proceeds into equities.',
+            actionBn: 'জরুরি তহবিল ছাড়া অতিরিক্ত অর্থ ডেট থেকে ইক্যুইটিতে স্থানান্তর করুন।'
+          }
+        ]
+      },
+      {
+        id: 'fair',
+        index: 2,
+        maxScore: 45,
+        rangeText: '21 – 45',
+        nameEn: 'FAIR VALUED',
+        nameBn: 'ন্যায্য মূল্য (নিয়মিত বিনিয়োগ)',
+        shortBn: 'ন্যায্য মূল্য',
+        bgClass: 'bg-sky-600',
+        badgeClass: 'bg-sky-100 text-sky-800 border-sky-300',
+        cardBorder: 'border-sky-500 bg-sky-50/70',
+        hex: '#0ea5e9',
+        alloc: { equity: 60, hybrid: 25, debt: 15, sipBoost: 1.0, stpNote: '3–6M STP' },
+        headlineEn: 'Balanced Valuation Zone: Market is trading near its long-term fair value corridor.',
+        headlineBn: 'বাজার এখন ন্যায্য মূল্যে রয়েছে। আপনার আর্থিক লক্ষ্য অনুযায়ী নিয়মিত মাসিক SIP চালিয়ে যান এবং ৩-৬ মাসের STP ব্যবহার করুন।',
+        directives: [
+          {
+            product: 'Equity Mutual Funds (Goal-Based SIP)',
+            actionEn: 'Continue 100% of planned monthly SIPs across Large-Cap, Flexi-Cap, and Index Funds. Deploy new lumpsums via a 3-to-6 month STP.',
+            actionBn: 'লক্ষ্যভিত্তিক মাসিক SIP ১০০% চালিয়ে যান; এককালীন অর্থ ৩-৬ মাসের STP-তে বিনিয়োগ করুন।'
+          },
+          {
+            product: 'Hybrid & SIF Long-Short Strategies',
+            actionEn: 'Allocate 25% of fresh money to Balanced Advantage, Multi-Asset Allocation, or SIF Active Asset Allocator funds.',
+            actionBn: 'নতুন বিনিয়োগের ২৫% ব্যালেন্সড অ্যাডভান্টেজ বা মাল্টি-অ্যাসেট ফান্ডে রাখুন।'
+          },
+          {
+            product: 'Corporate Bonds & Fixed Deposits',
+            actionEn: 'Maintain standard 15% fixed-income anchor for near-term family goals (3–5 years away).',
+            actionBn: 'স্বল্পমেয়াদী লক্ষ্যের জন্য ১৫% বন্ড ও ফিক্সড ডিপোজিটে বজায় রাখুন।'
+          }
+        ]
+      },
+      {
+        id: 'overvalued',
+        index: 3,
+        maxScore: 65,
+        rangeText: '46 – 65',
+        nameEn: 'OVER VALUED',
+        nameBn: 'অতিমূল্যায়িত (সতর্ক থাকুন)',
+        shortBn: 'অতিমূল্যায়িত',
+        bgClass: 'bg-amber-500',
+        badgeClass: 'bg-amber-100 text-amber-800 border-amber-300',
+        cardBorder: 'border-amber-500 bg-amber-50/70',
+        hex: '#f59e0b',
+        alloc: { equity: 40, hybrid: 35, debt: 25, sipBoost: 1.0, stpNote: '6–12M STP' },
+        headlineEn: 'Elevated Valuation Zone: Multiples are stretching above historical medians; stagger fresh inflows.',
+        headlineBn: 'বাজারের মূল্যায়ন গড় স্তরের উপরে চলে গেছে। চলমান SIP বজায় রাখলেও নতুন এককালীন বিনিয়োগ সরাসরি না করে ৬-১২ মাসের STP করুন।',
+        directives: [
+          {
+            product: 'Equity Mutual Funds (Staggered STP)',
+            actionEn: 'Do not stop long-term SIPs (10+ yr horizon), but avoid direct one-shot lumpsums. Park lumpsums in Liquid/Arbitrage and run a 6–12 month STP.',
+            actionBn: 'দীর্ঘমেয়াদী SIP বন্ধ করবেন না, তবে এককালীন অর্থ লিকুইড ফান্ডে রেখে ৬-১২ মাসের STP করুন।'
+          },
+          {
+            product: 'SIF Long-Short & Dynamic Hybrid',
+            actionEn: 'Increase allocation (35%) to Dynamic Asset Allocation / Balanced Advantage and SIF Equity Long-Short strategies for downside cushioning.',
+            actionBn: 'ঝুঁকি কমাতে ৩৫% অর্থ ডায়নামিক অ্যাসেট অ্যালোকেশন ও SIF লং-শর্ট ফান্ডে রাখুন।'
+          },
+          {
+            product: 'Corporate Bonds & Fixed Deposits',
+            actionEn: 'Lock in attractive yields on 25% of fresh capital via high-grade Corporate Bonds and NBFC Fixed Deposits.',
+            actionBn: '২৫% তহবিল উচ্চ-মানের কর্পোরেট বন্ড এবং ফিক্সড ডিপোজিটে সুরক্ষিত করুন।'
+          }
+        ]
+      },
+      {
+        id: 'expensive',
+        index: 4,
+        maxScore: 80,
+        rangeText: '66 – 80',
+        nameEn: 'EXPENSIVE',
+        nameBn: 'ব্যয়বহুল (মুনাফা সংরক্ষণ)',
+        shortBn: 'ব্যয়বহুল',
+        bgClass: 'bg-orange-500',
+        badgeClass: 'bg-orange-100 text-orange-800 border-orange-300',
+        cardBorder: 'border-orange-500 bg-orange-50/70',
+        hex: '#f97316',
+        alloc: { equity: 20, hybrid: 40, debt: 40, sipBoost: 0.85, stpNote: '12M+ Defensive STP' },
+        headlineEn: 'Caution Zone: Equity risk-reward is unfavourable for fresh lumpsums; prioritize downside protection.',
+        headlineBn: 'বাজার এখন বেশ ব্যয়বহুল। নতুন এককালীন ইক্যুইটি বিনিয়োগ এড়িয়ে চলুন এবং মুনাফা সংরক্ষণের দিকে নজর দিন।',
+        directives: [
+          {
+            product: 'Equity Mutual Funds (Large-Cap Bias)',
+            actionEn: 'Restrict pure equity exposure to 20% (Large-Cap / Low-Volatility Index only). Trim overweight Small-Cap and thematic positions.',
+            actionBn: 'নতুন বিনিয়োগের মাত্র ২০% লার্জ-ক্যাপ বা লো-ভোলাটিলিটি ফান্ডে সীমাবদ্ধ রাখুন; স্মল-ক্যাপ থেকে মুনাফা তুলুন।'
+          },
+          {
+            product: 'SIF Long-Short & Arbitrage Funds',
+            actionEn: 'Deploy 40% into SIF Long-Short funds, Equity Savings, and Arbitrage funds to earn tax-efficient returns with low market beta.',
+            actionBn: '৪০% তহবিল SIF লং-শর্ট ফান্ড এবং আর্বিট্রেজ ফান্ডে রাখুন।'
+          },
+          {
+            product: 'Corporate Bonds, FDs & Debt Laddering',
+            actionEn: 'Allocate 40% to Corporate Bonds, Short-Duration Debt, and Fixed Deposits; secure corpus for goals within the next 5–7 years.',
+            actionBn: 'আগামী ৫-৭ বছরের লক্ষ্যের তহবিল ইক্যুইটি থেকে সরিয়ে বন্ড ও FD-তে নিরাপদ করুন।'
+          }
+        ]
+      },
+      {
+        id: 'bubble',
+        index: 5,
+        maxScore: 100,
+        rangeText: '81 – 100',
+        nameEn: 'BUBBLE',
+        nameBn: 'বাবল (চরম ঝুঁকি / মুনাফা বুকিং)',
+        shortBn: 'বাবল',
+        bgClass: 'bg-red-600',
+        badgeClass: 'bg-red-100 text-red-800 border-red-300',
+        cardBorder: 'border-red-600 bg-red-50/70',
+        hex: '#ef4444',
+        alloc: { equity: 10, hybrid: 30, debt: 60, sipBoost: 0.70, stpNote: 'Hold in Debt / Arbitrage' },
+        headlineEn: 'Extreme Euphoria / Bubble Zone: Historical forward returns from these multiples are sharply negative; rebalance now.',
+        headlineBn: 'বাজার চরম বাবল জোনে রয়েছে! অতিরিক্ত ইক্যুইটি থেকে মুনাফা তুলে নিরাপদ বন্ড, লিকুইড ফান্ড ও ফিক্সড ডিপোজিটে স্থানান্তর করুন।',
+        directives: [
+          {
+            product: 'Equity Portfolio Rebalancing',
+            actionEn: 'Book partial profits where equity allocation has drifted above your target band. Avoid all fresh lumpsum equity commitments.',
+            actionBn: 'নির্ধারিত সীমার অতিরিক্ত ইক্যুইটি থেকে আংশিক মুনাফা বুক করুন; নতুন লাম্পসাম সম্পূর্ণ বন্ধ রাখুন।'
+          },
+          {
+            product: 'SIF Long-Short & Multi-Asset Hedging',
+            actionEn: 'Use hedged SIF strategies, Gold/Multi-Asset FoFs, and Arbitrage funds (30%) to protect capital against sharp drawdowns.',
+            actionBn: 'পুঁজি সুরক্ষিত রাখতে ৩০% অর্থ আর্বিট্রেজ, গোল্ড ও হেজড SIF ফান্ডে রাখুন।'
+          },
+          {
+            product: 'Fixed Deposits, Corporate Bonds & Overnight Funds',
+            actionEn: 'Park 60% in high-safety Corporate FDs, Bonds, and Overnight/Liquid funds to build dry powder for the next market correction.',
+            actionBn: '৬০% অর্থ নিরাপদ ফিক্সড ডিপোজিট ও লিকুইড ফান্ডে রাখুন যাতে পরবর্তী কারেকশনে সস্তায় কেনা যায়।'
+          }
+        ]
+      }
+    ];
+
+    // Historical & Live Presets (Grounded in Craytheon & NSE 2020-2026 data)
+    const PRESETS = {
+      oct2026: {
+        label: '23 Oct 2026 (Live NSE Baseline)',
+        date: '2026-10-23',
+        nifty: 22687.65,
+        pe: 19.13,
+        pb: 2.79,
+        dy: 1.50,
+        vix: 16.39,
+        buffett: 132.2
+      },
+      jul2025: {
+        label: '18 Jul 2025 (Balanced Corridor)',
+        date: '2025-07-18',
+        nifty: 24500.00,
+        pe: 21.80,
+        pb: 3.32,
+        dy: 1.32,
+        vix: 14.80,
+        buffett: 118.0
+      },
+      sep2024: {
+        label: '27 Sep 2024 (Elevated Rally)',
+        date: '2024-09-27',
+        nifty: 26178.95,
+        pe: 23.70,
+        pb: 4.10,
+        dy: 1.16,
+        vix: 12.60,
+        buffett: 136.5
+      },
+      jul2023: {
+        label: '20 Jul 2023 (High PB Expensive)',
+        date: '2023-07-20',
+        nifty: 19979.15,
+        pe: 25.40,
+        pb: 4.68,
+        dy: 1.04,
+        vix: 11.40,
+        buffett: 141.0
+      },
+      feb2021: {
+        label: '08 Feb 2021 (Post-Stimulus Peak)',
+        date: '2021-02-08',
+        nifty: 15115.80,
+        pe: 40.80,
+        pb: 4.42,
+        dy: 0.93,
+        vix: 23.90,
+        buffett: 152.0
+      },
+      mar2020: {
+        label: '23 Mar 2020 (COVID-19 Crash Low)',
+        date: '2020-03-23',
+        nifty: 7511.10,
+        pe: 17.15,
+        pb: 2.17,
+        dy: 2.00,
+        vix: 27.50,
+        buffett: 58.0
+      },
+      aug2013: {
+        label: '28 Aug 2013 (Taper Tantrum Low)',
+        date: '2013-08-28',
+        nifty: 5471.80,
+        pe: 16.10,
+        pb: 2.75,
+        dy: 1.68,
+        vix: 24.50,
+        buffett: 68.0
+      },
+      oct2008: {
+        label: '27 Oct 2008 (Global Financial Crisis Bottom)',
+        date: '2008-10-27',
+        nifty: 2524.20,
+        pe: 10.68,
+        pb: 2.15,
+        dy: 2.18,
+        vix: 28.00,
+        buffett: 56.0
+      },
+      jan2008: {
+        label: '08 Jan 2008 (Pre-GFC Euphoria Peak)',
+        date: '2008-01-08',
+        nifty: 6287.85,
+        pe: 28.29,
+        pb: 6.50,
+        dy: 0.82,
+        vix: 22.00,
+        buffett: 149.0
+      },
+      apr2003: {
+        label: '25 Apr 2003 (Post-Dot-Com Value Trough)',
+        date: '2003-04-25',
+        nifty: 924.30,
+        pe: 11.20,
+        pb: 2.10,
+        dy: 2.35,
+        vix: 21.00,
+        buffett: 32.0
+      },
+      feb2000: {
+        label: '11 Feb 2000 (Dot-Com Tech Bubble Peak)',
+        date: '2000-02-11',
+        nifty: 1756.00,
+        pe: 28.40,
+        pb: 4.60,
+        dy: 0.88,
+        vix: 25.00,
+        buffett: 85.0
+      }
+    };
+
+    // 30-Year Nifty 50 Historical Valuation Dataset (1996 to 2026)
+    const HISTORY_30Y = [
+      { date: '1996-12-31', year: 1996, nifty: 899,   pe: 16.80, pb: 2.85, dy: 1.65, vix: 19.0, buffett: 38.0, score: 13.8, note: 'Nifty 50 Launch Year' },
+      { date: '1997-12-31', year: 1997, nifty: 1079,  pe: 17.50, pb: 2.90, dy: 1.58, vix: 18.5, buffett: 41.0, score: 15.2, note: 'Asian Crisis Onset' },
+      { date: '1998-12-31', year: 1998, nifty: 884,   pe: 13.40, pb: 2.15, dy: 1.92, vix: 22.0, buffett: 34.0, score: 6.4,  note: 'Pokhran / Asian Crisis Low' },
+      { date: '1999-12-30', year: 1999, nifty: 1480,  pe: 24.20, pb: 3.95, dy: 1.08, vix: 17.0, buffett: 68.0, score: 56.4, note: 'Y2K Tech Boom' },
+      { date: '2000-02-11', year: 2000, nifty: 1756,  pe: 28.40, pb: 4.60, dy: 0.88, vix: 25.0, buffett: 85.0, score: 81.2, note: 'Dot-Com Bubble Peak' },
+      { date: '2001-09-21', year: 2001, nifty: 913,   pe: 14.50, pb: 2.25, dy: 1.85, vix: 24.0, buffett: 35.0, score: 7.8,  note: '9/11 & Tech Bust' },
+      { date: '2002-10-28', year: 2002, nifty: 951,   pe: 13.80, pb: 2.20, dy: 2.05, vix: 20.0, buffett: 34.0, score: 7.1,  note: 'Deep Value Accumulation' },
+      { date: '2003-04-25', year: 2003, nifty: 924,   pe: 11.20, pb: 2.10, dy: 2.35, vix: 21.0, buffett: 32.0, score: 4.5,  note: 'Multi-Decade Value Bottom' },
+      { date: '2004-12-31', year: 2004, nifty: 2080,  pe: 16.40, pb: 3.10, dy: 1.62, vix: 16.5, buffett: 55.0, score: 17.6, note: 'Infrastructure Bull Start' },
+      { date: '2005-12-30', year: 2005, nifty: 2836,  pe: 17.20, pb: 3.45, dy: 1.48, vix: 15.5, buffett: 72.0, score: 22.9, note: 'FII Inflow Expansion' },
+      { date: '2006-12-29', year: 2006, nifty: 3966,  pe: 21.30, pb: 4.35, dy: 1.22, vix: 16.0, buffett: 92.0, score: 48.2, note: 'GDP Boom Re-rating' },
+      { date: '2007-12-31', year: 2007, nifty: 6138,  pe: 27.60, pb: 6.20, dy: 0.85, vix: 19.5, buffett: 146.0, score: 83.4, note: 'Pre-GFC Euphoria' },
+      { date: '2008-10-27', year: 2008, nifty: 2524,  pe: 10.68, pb: 2.15, dy: 2.18, vix: 28.0, buffett: 56.0, score: 4.8,  note: 'GFC Lehman Crash Low' },
+      { date: '2009-12-31', year: 2009, nifty: 5201,  pe: 22.70, pb: 3.65, dy: 1.15, vix: 15.8, buffett: 96.0, score: 45.4, note: '+77.6% Recovery Rally' },
+      { date: '2010-10-29', year: 2010, nifty: 6017,  pe: 25.20, pb: 3.85, dy: 1.06, vix: 16.2, buffett: 104.0, score: 59.8, note: 'Post-Stimulus Peak' },
+      { date: '2011-12-30', year: 2011, nifty: 4624,  pe: 17.30, pb: 2.80, dy: 1.56, vix: 21.5, buffett: 67.0, score: 13.4, note: 'Eurozone Debt Correction' },
+      { date: '2012-12-31', year: 2012, nifty: 5905,  pe: 18.60, pb: 3.05, dy: 1.46, vix: 15.2, buffett: 76.0, score: 20.8, note: 'Gradual Earnings Recovery' },
+      { date: '2013-08-28', year: 2013, nifty: 5472,  pe: 16.10, pb: 2.75, dy: 1.68, vix: 24.5, buffett: 68.0, score: 11.2, note: 'Fed Taper Tantrum Trough' },
+      { date: '2014-12-31', year: 2014, nifty: 8282,  pe: 21.20, pb: 3.45, dy: 1.28, vix: 14.5, buffett: 84.0, score: 35.6, note: 'Reform Mandate Re-rating' },
+      { date: '2015-07-31', year: 2015, nifty: 8532,  pe: 23.50, pb: 3.55, dy: 1.22, vix: 14.8, buffett: 82.0, score: 45.8, note: 'Mid-Cycle Consolidation' },
+      { date: '2016-12-30', year: 2016, nifty: 8185,  pe: 21.50, pb: 3.10, dy: 1.38, vix: 15.9, buffett: 78.0, score: 28.5, note: 'Demonetization Dip' },
+      { date: '2017-12-29', year: 2017, nifty: 10530, pe: 26.40, pb: 3.50, dy: 1.08, vix: 12.4, buffett: 98.0, score: 60.2, note: 'Low-VIX Bull Run (10k)' },
+      { date: '2018-08-31', year: 2018, nifty: 11680, pe: 28.20, pb: 3.70, dy: 1.07, vix: 12.8, buffett: 95.0, score: 66.8, note: 'Pre-IL&FS Standalone Peak' },
+      { date: '2019-06-28', year: 2019, nifty: 11788, pe: 29.30, pb: 3.80, dy: 1.18, vix: 14.2, buffett: 92.0, score: 67.4, note: 'Polarized Large-Cap Rally' },
+      { date: '2020-03-23', year: 2020, nifty: 7511,  pe: 17.15, pb: 2.17, dy: 2.00, vix: 27.5, buffett: 58.0, score: 8.6,  note: 'COVID-19 Lockdown Crash' },
+      { date: '2021-02-08', year: 2021, nifty: 15116, pe: 40.80, pb: 4.42, dy: 0.93, vix: 23.9, buffett: 152.0, score: 81.6, note: 'Record Standalone P/E Peak' },
+      { date: '2022-06-17', year: 2022, nifty: 15293, pe: 19.70, pb: 4.00, dy: 1.38, vix: 19.5, buffett: 108.0, score: 34.2, note: 'Rate-Hike & War Reset' },
+      { date: '2023-07-20', year: 2023, nifty: 19979, pe: 25.40, pb: 4.68, dy: 1.04, vix: 11.4, buffett: 141.0, score: 75.8, note: 'High P/B & Low VIX Peak' },
+      { date: '2024-09-27', year: 2024, nifty: 26179, pe: 23.70, pb: 4.10, dy: 1.16, vix: 12.6, buffett: 136.5, score: 62.4, note: 'All-Time High 26,179' },
+      { date: '2025-07-18', year: 2025, nifty: 24500, pe: 21.80, pb: 3.32, dy: 1.32, vix: 14.8, buffett: 118.0, score: 36.8, note: 'Earnings Consolidation' },
+      { date: '2026-10-23', year: 2026, nifty: 22688, pe: 19.13, pb: 2.79, dy: 1.50, vix: 16.39, buffett: 132.2, score: 18.4, note: 'Current Live Cheap Zone' }
+    ];
+
+    // Initial 2026 Weekly / Monthly Log History
+    const DEFAULT_WEEKLY_LOG = [
+      { date: '2026-01-30', nifty: 25120, pe: 22.30, pb: 3.50, dy: 1.24, vix: 14.20, buffett: 136.0, score: 42.1 },
+      { date: '2026-03-27', nifty: 23480, pe: 20.60, pb: 3.20, dy: 1.34, vix: 15.10, buffett: 131.5, score: 30.2 },
+      { date: '2026-05-29', nifty: 23890, pe: 20.70, pb: 3.30, dy: 1.31, vix: 14.60, buffett: 133.0, score: 32.8 },
+      { date: '2026-07-31', nifty: 24110, pe: 20.70, pb: 3.10, dy: 1.35, vix: 13.90, buffett: 132.8, score: 30.9 },
+      { date: '2026-08-28', nifty: 23950, pe: 20.60, pb: 3.00, dy: 1.38, vix: 14.40, buffett: 132.2, score: 28.4 },
+      { date: '2026-09-25', nifty: 23180, pe: 19.80, pb: 2.80, dy: 1.44, vix: 15.30, buffett: 130.5, score: 21.8 },
+      { date: '2026-10-16', nifty: 22811, pe: 19.26, pb: 2.80, dy: 1.49, vix: 15.54, buffett: 131.8, score: 19.1 },
+      { date: '2026-10-23', nifty: 22688, pe: 19.13, pb: 2.79, dy: 1.50, vix: 16.39, buffett: 132.2, score: 18.4 }
+    ];
+
+    let state = {
+      lang: 'bilingual', // 'bilingual' | 'en' | 'bn'
+      modelMode: '5metric', // '5metric' | '3metric'
+      chartTimeframe: '30y', // 'weekly' | '5y' | '10y' | '20y' | '30y'
+      weekLabel: '23 Oct 2026 (Live NSE Baseline)',
+      date: '2026-10-23',
+      nifty: 22687.65,
+      pe: 19.13,
+      pb: 2.79,
+      dy: 1.50,
+      vix: 16.39,
+      buffett: 132.2,
+      lumpsum: 500000,
+      sip: 25000,
+      weeklyLog: [...DEFAULT_WEEKLY_LOG]
+    };
+
+    // Load saved log from localStorage safely
+    try {
+      const saved = localStorage.getItem('takapoisa_weekly_mood_log_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          state.weeklyLog = parsed;
+        }
+      }
+    } catch (e) {
+      // Sandbox safe fallback
+    }
+
+    // Clamp helper
+    function clamp(val, min, max) {
+      return Math.max(min, Math.min(max, val));
+    }
+
+    // Piecewise linear interpolation so each indicator maps accurately to the 5 zones:
+    // 0-20 (Cheap), 20-45 (Fair), 45-65 (Overvalued), 65-80 (Expensive), 80-100 (Bubble)
+    function mapPiecewise(val, breakpoints, scores) {
+      if (val <= breakpoints[0]) return scores[0];
+      if (val >= breakpoints[breakpoints.length - 1]) return scores[scores.length - 1];
+      for (let i = 0; i < breakpoints.length - 1; i++) {
+        if (val >= breakpoints[i] && val <= breakpoints[i + 1]) {
+          const ratio = (val - breakpoints[i]) / (breakpoints[i + 1] - breakpoints[i]);
+          return scores[i] + ratio * (scores[i + 1] - scores[i]);
+        }
+      }
+      return 50;
+    }
+
+    // Individual Indicator Score Calculators (0 to 100)
+    function scorePE(pe) {
+      // <20 -> 0-20; 20-22.5 -> 20-45; 22.5-24.5 -> 45-65; 24.5-27.0 -> 65-80; >27 -> 80-100
+      return clamp(mapPiecewise(pe, [16.0, 20.0, 22.5, 24.5, 27.0, 32.0], [2, 20, 45, 65, 80, 99]), 0, 100);
+    }
+
+    function scorePB(pb) {
+      // <3.0 -> 0-20; 3.0-3.5 -> 20-45; 3.5-3.9 -> 45-65; 3.9-4.3 -> 65-80; >4.3 -> 80-100
+      return clamp(mapPiecewise(pb, [2.2, 3.0, 3.5, 3.9, 4.3, 4.9], [2, 20, 45, 65, 80, 99]), 0, 100);
+    }
+
+    function scoreDY(dy) {
+      // Inverse: >1.45% -> 0-20 (Cheap); 1.25-1.45% -> 20-45; 1.10-1.25% -> 45-65; 0.95-1.10% -> 65-80; <0.95% -> 80-100
+      return clamp(mapPiecewise(dy, [0.80, 0.95, 1.10, 1.25, 1.45, 1.90], [99, 80, 65, 45, 20, 2]), 0, 100);
+    }
+
+    function scoreVIX(vix) {
+      // Contrarian complacency gauge: low VIX (<12) = high greed/complacency; high VIX (>18) = fear/value opportunity
+      // Except extreme panic/euphoria >26 is capped cleanly
+      return clamp(mapPiecewise(vix, [10.0, 11.5, 12.5, 14.0, 18.0, 24.0], [92, 80, 65, 45, 20, 5]), 0, 100);
+    }
+
+    function scoreBuffett(b) {
+      // <95% -> 0-20; 95-115% -> 20-45; 115-135% -> 45-65; 135-148% -> 65-80; >148% -> 80-100
+      return clamp(mapPiecewise(b, [75, 95, 115, 135, 148, 165], [3, 20, 45, 65, 80, 98]), 0, 100);
+    }
+
+    function getZoneByScore(score) {
+      if (score <= 20) return MOOD_ZONES[0];
+      if (score <= 45) return MOOD_ZONES[1];
+      if (score <= 65) return MOOD_ZONES[2];
+      if (score <= 80) return MOOD_ZONES[3];
+      return MOOD_ZONES[4];
+    }
+
+    function computeAllScores() {
+      const sPE = scorePE(state.pe);
+      const sPB = scorePB(state.pb);
+      const sDY = scoreDY(state.dy);
+      const sVIX = scoreVIX(state.vix);
+      const sBuf = scoreBuffett(state.buffett);
+
+      let composite = 0;
+      if (state.modelMode === '5metric') {
+        composite = (sPE * 0.40) + (sPB * 0.25) + (sDY * 0.15) + (sVIX * 0.10) + (sBuf * 0.10);
+      } else {
+        composite = (sPE * 0.50) + (sPB * 0.30) + (sDY * 0.20);
+      }
+
+      return {
+        pe: sPE,
+        pb: sPB,
+        dy: sDY,
+        vix: sVIX,
+        buffett: sBuf,
+        composite: Number(composite.toFixed(1)),
+        zone: getZoneByScore(composite)
+      };
+    }
+
+    function formatINR(num) {
+      const n = Math.round(Number(num) || 0);
+      return '₹' + n.toLocaleString('en-IN');
+    }
+
+    function updateMiniTag(elementId, score) {
+      const el = document.getElementById(elementId);
+      const z = getZoneByScore(score);
+      el.textContent = state.lang === 'bn' ? z.shortBn : z.nameEn;
+      el.className = 'text-xs font-bold px-2 py-0.5 rounded border ' + z.badgeClass;
+    }
+
+    // Render the 5 Zone Cards below the main colour bar
+    function renderZoneCards(activeZoneId) {
+      const grid = document.getElementById('zoneCardsGrid');
+      grid.innerHTML = MOOD_ZONES.map(z => {
+        const isActive = z.id === activeZoneId;
+        const ringClasses = isActive
+          ? `ring-2 ring-offset-1 ring-slate-900 ${z.cardBorder} shadow-md scale-[1.01]`
+          : 'border-slate-200 bg-slate-50/60 opacity-75 hover:opacity-100';
+        return `
+          <div class="p-2.5 rounded-xl border transition-all duration-200 ${ringClasses}">
+            <div class="flex items-center justify-between gap-1">
+              <span class="text-[11px] font-extrabold tracking-tight text-slate-900">${z.index}. ${z.nameEn}</span>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded text-white ${z.bgClass}">${z.rangeText}</span>
+            </div>
+            <div class="text-xs font-semibold text-slate-700 font-bn mt-0.5 ${state.lang === 'en' ? 'hidden' : ''}">${z.nameBn}</div>
+            <div class="text-[11px] text-slate-600 mt-1">
+              Eq: <strong>${z.alloc.equity}%</strong> · SIF/Hyb: <strong>${z.alloc.hybrid}%</strong> · Debt: <strong>${z.alloc.debt}%</strong>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render Product Action Directives
+    function renderDirectives(zone) {
+      const container = document.getElementById('productDirectivesList');
+      container.innerHTML = zone.directives.map(d => `
+        <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/70">
+          <div class="text-xs font-extrabold text-teal-800 uppercase tracking-wide">${d.product}</div>
+          <p class="text-xs text-slate-700 mt-1 leading-relaxed ${state.lang === 'bn' ? 'hidden' : ''}">${d.actionEn}</p>
+          <p class="text-xs text-slate-700 mt-1 font-bn leading-relaxed ${state.lang === 'en' ? 'hidden' : ''}">${d.actionBn}</p>
+        </div>
+      `).join('');
+    }
+
+    function getActiveChartDataset() {
+      if (state.chartTimeframe === 'weekly') {
+        return state.weeklyLog;
+      }
+      const cutoffYear = state.chartTimeframe === '5y' ? 2022
+        : state.chartTimeframe === '10y' ? 2017
+        : state.chartTimeframe === '20y' ? 2007
+        : 1996;
+      return HISTORY_30Y.filter(item => item.year >= cutoffYear);
+    }
+
+    // Chart.js Instance
+    let moodChart = null;
+    function initOrUpdateChart() {
+      const ctx = document.getElementById('weeklyMoodChart').getContext('2d');
+      const dataset = getActiveChartDataset();
+      const labels = dataset.map(item => state.chartTimeframe === 'weekly' ? item.date.slice(5) : String(item.year));
+      const scores = dataset.map(item => item.score);
+      const pes = dataset.map(item => item.pe);
+      const pointColors = scores.map(s => getZoneByScore(s).hex);
+
+      if (moodChart) {
+        moodChart.data.labels = labels;
+        moodChart.data.datasets[0].data = scores;
+        moodChart.data.datasets[0].pointBackgroundColor = pointColors;
+        moodChart.data.datasets[1].data = pes;
+        moodChart.update();
+        return;
+      }
+
+      moodChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Market Mood Score (0-100)',
+              data: scores,
+              borderColor: '#0f766e',
+              backgroundColor: 'rgba(15, 118, 110, 0.12)',
+              borderWidth: 3,
+              fill: true,
+              tension: 0.3,
+              pointRadius: 5,
+              pointBackgroundColor: pointColors,
+              pointBorderColor: '#ffffff',
+              pointBorderWidth: 2,
+              yAxisID: 'y'
+            },
+            {
+              label: 'Nifty 50 P/E Ratio',
+              data: pes,
+              borderColor: '#64748b',
+              borderDash: [5, 5],
+              borderWidth: 2,
+              fill: false,
+              tension: 0.3,
+              pointRadius: 3,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                boxWidth: 12,
+                font: { size: 11, family: 'Inter' }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                afterBody: function(context) {
+                  const ds = getActiveChartDataset();
+                  const idx = context[0].dataIndex;
+                  const row = ds[idx] || { score: 20 };
+                  const z = getZoneByScore(row.score);
+                  const noteLine = row.note ? `Event: ${row.note} | ` : '';
+                  return `${noteLine}Mood: ${z.nameEn} (${z.shortBn})`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              type: 'linear',
+              position: 'left',
+              min: 0,
+              max: 100,
+              title: { display: true, text: 'Mood Score (0-100)', font: { size: 10 } }
+            },
+            y1: {
+              type: 'linear',
+              position: 'right',
+              min: 15,
+              max: 35,
+              grid: { drawOnChartArea: false },
+              title: { display: true, text: 'Nifty P/E', font: { size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    function renderWeeklyTable() {
+      const tbody = document.getElementById('weeklyLogTableBody');
+      const dataset = getActiveChartDataset();
+      const rows = [...dataset].reverse();
+      tbody.innerHTML = rows.map(r => {
+        const z = getZoneByScore(r.score);
+        const dateLabel = r.note ? `${r.date} <span class="text-[10px] text-slate-400 block">${r.note}</span>` : r.date;
+        return `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="py-2 px-2.5 font-semibold text-slate-800">${dateLabel}</td>
+            <td class="py-2 px-2.5 text-slate-700">${Number(r.nifty).toLocaleString('en-IN')}</td>
+            <td class="py-2 px-2.5 font-semibold text-slate-800">${Number(r.pe).toFixed(2)}</td>
+            <td class="py-2 px-2.5 text-slate-700">${Number(r.pb).toFixed(2)}</td>
+            <td class="py-2 px-2.5 text-slate-700">${Number(r.dy).toFixed(2)}%</td>
+            <td class="py-2 px-2.5 font-extrabold text-slate-900">${Number(r.score).toFixed(1)}</td>
+            <td class="py-2 px-2.5">
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold border ${z.badgeClass}">
+                ${z.nameEn} · ${z.shortBn}
+              </span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderThirtyYearHeatmap() {
+      const grid = document.getElementById('thirtyYearHeatmapGrid');
+      if (!grid) return;
+      grid.innerHTML = HISTORY_30Y.map(item => {
+        const z = getZoneByScore(item.score);
+        const isSelected = state.date.startsWith(String(item.year));
+        const ring = isSelected ? 'ring-2 ring-offset-1 ring-slate-900 scale-105 z-10' : 'opacity-90 hover:opacity-100 hover:scale-105';
+        return `
+          <button type="button" data-year="${item.year}" class="year-heat-btn p-1.5 rounded-lg text-white text-center shadow-sm transition-all ${z.bgClass} ${ring}" title="${item.year}: ${item.note} (PE ${item.pe}, Score ${item.score})">
+            <div class="text-[11px] font-extrabold leading-tight">${item.year}</div>
+            <div class="text-[9px] font-medium opacity-95">PE ${item.pe.toFixed(1)}</div>
+            <div class="text-[8px] uppercase font-bold tracking-tighter opacity-90 truncate">${state.lang === 'bn' ? z.shortBn : z.nameEn}</div>
+          </button>
+        `;
+      }).join('');
+
+      grid.querySelectorAll('.year-heat-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const yr = parseInt(btn.getAttribute('data-year'), 10);
+          const found = HISTORY_30Y.find(x => x.year === yr);
+          if (!found) return;
+          state.weekLabel = `${found.year} Historical Cycle (${found.note})`;
+          state.date = found.date;
+          state.nifty = found.nifty;
+          state.pe = found.pe;
+          state.pb = found.pb;
+          state.dy = found.dy;
+          state.vix = found.vix;
+          state.buffett = found.buffett;
+
+          document.getElementById('weekDateInput').value = found.date;
+          document.getElementById('niftyIndexInput').value = found.nifty;
+          document.getElementById('peInputNumber').value = found.pe;
+          document.getElementById('peSlider').value = clamp(found.pe, 14, 34);
+          document.getElementById('pbInputNumber').value = found.pb;
+          document.getElementById('pbSlider').value = clamp(found.pb, 2.0, 5.0);
+          document.getElementById('dyInputNumber').value = found.dy;
+          document.getElementById('dySlider').value = clamp(found.dy, 0.8, 2.0);
+          document.getElementById('vixInputNumber').value = found.vix;
+          document.getElementById('vixSlider').value = clamp(found.vix, 10, 28);
+          document.getElementById('buffettInputNumber').value = found.buffett;
+          document.getElementById('buffettSlider').value = clamp(found.buffett, 80, 165);
+
+          renderAll();
+          showToast(`Loaded ${found.year}: ${found.note} (${getZoneByScore(found.score).nameEn})`);
+        });
+      });
+    }
+
+    // Main Render Function
+    function renderAll() {
+      const results = computeAllScores();
+      const zone = results.zone;
+
+      // Update Header / Active Week labels
+      document.getElementById('activeWeekLabel').textContent = state.weekLabel;
+      document.getElementById('activeNiftyDisplay').textContent = Number(state.nifty).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+
+      // Update Score & Main Badge
+      document.getElementById('compositeScoreDisplay').textContent = results.composite.toFixed(1);
+      const pill = document.getElementById('moodZonePill');
+      pill.className = `px-4 py-2.5 rounded-xl text-white font-bold shadow-sm transition-colors duration-300 text-center min-w-[165px] ${zone.bgClass}`;
+      document.getElementById('moodZoneTitle').textContent = `${zone.index}. ${zone.nameEn}`;
+      document.getElementById('moodZoneTitleBn').textContent = zone.nameBn;
+
+      // Update Master Colour Bar Pointer
+      const clampedLeft = clamp(results.composite, 2, 98);
+      document.getElementById('moodPointerContainer').style.left = `${clampedLeft}%`;
+      document.getElementById('pointerScoreBubble').textContent = `▼ ${results.composite.toFixed(1)} (${zone.nameEn})`;
+
+      // Update Individual Mini Pins & Tags
+      document.getElementById('peMiniPin').style.left = `${clamp(results.pe, 2, 98)}%`;
+      document.getElementById('pbMiniPin').style.left = `${clamp(results.pb, 2, 98)}%`;
+      document.getElementById('dyMiniPin').style.left = `${clamp(results.dy, 2, 98)}%`;
+      document.getElementById('vixMiniPin').style.left = `${clamp(results.vix, 2, 98)}%`;
+      document.getElementById('buffettMiniPin').style.left = `${clamp(results.buffett, 2, 98)}%`;
+
+      updateMiniTag('peZoneTag', results.pe);
+      updateMiniTag('pbZoneTag', results.pb);
+      updateMiniTag('dyZoneTag', results.dy);
+      updateMiniTag('vixZoneTag', results.vix);
+      updateMiniTag('buffettZoneTag', results.buffett);
+
+      // Weight badges for 5-metric vs 3-metric mode
+      const is5 = state.modelMode === '5metric';
+      document.getElementById('peWeightBadge').textContent = is5 ? 'Weight: 40%' : 'Weight: 50%';
+      document.getElementById('pbWeightBadge').textContent = is5 ? 'Weight: 25%' : 'Weight: 30%';
+      document.getElementById('dyWeightBadge').textContent = is5 ? 'Weight: 15%' : 'Weight: 20%';
+      document.getElementById('vixCardBlock').style.opacity = is5 ? '1' : '0.45';
+      document.getElementById('buffettCardBlock').style.opacity = is5 ? '1' : '0.45';
+      document.getElementById('vixWeightBadge').textContent = is5 ? 'Weight: 10%' : 'Excluded (0%)';
+      document.getElementById('buffettWeightBadge').textContent = is5 ? 'Weight: 10%' : 'Excluded (0%)';
+
+      // Render 5-zone cards strip
+      renderZoneCards(zone.id);
+
+      // Update Client Advisory Panel
+      const advBadge = document.getElementById('advisoryBadgeSmall');
+      advBadge.textContent = `${zone.nameEn} (${zone.shortBn})`;
+      advBadge.className = `px-3 py-1 rounded-full text-xs font-extrabold border ${zone.badgeClass}`;
+
+      document.getElementById('advisoryHeadlineEn').textContent = zone.headlineEn;
+      document.getElementById('advisoryHeadlineBn').textContent = zone.headlineBn;
+
+      // Update Allocation Split Bar
+      const eqBar = document.getElementById('allocEquityBar');
+      const hybBar = document.getElementById('allocHybridBar');
+      const debtBar = document.getElementById('allocDebtBar');
+      eqBar.style.width = `${zone.alloc.equity}%`;
+      eqBar.textContent = `Equity ${zone.alloc.equity}%`;
+      hybBar.style.width = `${zone.alloc.hybrid}%`;
+      hybBar.textContent = `SIF/Hyb ${zone.alloc.hybrid}%`;
+      debtBar.style.width = `${zone.alloc.debt}%`;
+      debtBar.textContent = `Debt ${zone.alloc.debt}%`;
+
+      renderDirectives(zone);
+
+      // Update Client Rupee Deployment Simulator
+      const lump = Math.max(0, Number(state.lumpsum) || 0);
+      const sip = Math.max(0, Number(state.sip) || 0);
+      document.getElementById('rupeeEquityOut').textContent = formatINR(lump * (zone.alloc.equity / 100));
+      document.getElementById('rupeeHybridOut').textContent = formatINR(lump * (zone.alloc.hybrid / 100));
+      document.getElementById('rupeeDebtOut').textContent = formatINR(lump * (zone.alloc.debt / 100));
+      document.getElementById('sipEquityOut').textContent = `Rec. SIP: ${formatINR(sip * zone.alloc.sipBoost)}/m`;
+      document.getElementById('stageNoteOut').textContent = zone.alloc.stpNote;
+
+      // Apply Language Visibility
+      document.querySelectorAll('[data-lang-bn]').forEach(el => {
+        if (state.lang === 'en') {
+          el.classList.add('hidden');
+        } else {
+          el.classList.remove('hidden');
+        }
+      });
+
+      initOrUpdateChart();
+      renderWeeklyTable();
+      renderThirtyYearHeatmap();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastMessageText').textContent = msg;
+      toast.classList.remove('hidden');
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3200);
+    }
+
+    // Bind Bidirectional Slider + Number Input
+    function bindSliderAndInput(sliderId, numberId, stateKey) {
+      const slider = document.getElementById(sliderId);
+      const numInput = document.getElementById(numberId);
+
+      slider.addEventListener('input', () => {
+        const val = parseFloat(slider.value);
+        state[stateKey] = val;
+        numInput.value = val;
+        state.weekLabel = `Custom Weekly Scenario (${state.date})`;
+        renderAll();
+      });
+
+      numInput.addEventListener('input', () => {
+        const val = parseFloat(numInput.value);
+        if (!isNaN(val)) {
+          state[stateKey] = val;
+          slider.value = clamp(val, parseFloat(slider.min), parseFloat(slider.max));
+          state.weekLabel = `Custom Weekly Scenario (${state.date})`;
+          renderAll();
+        }
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      bindSliderAndInput('peSlider', 'peInputNumber', 'pe');
+      bindSliderAndInput('pbSlider', 'pbInputNumber', 'pb');
+      bindSliderAndInput('dySlider', 'dyInputNumber', 'dy');
+      bindSliderAndInput('vixSlider', 'vixInputNumber', 'vix');
+      bindSliderAndInput('buffettSlider', 'buffettInputNumber', 'buffett');
+
+      // Date & Nifty Close inputs
+      document.getElementById('weekDateInput').addEventListener('change', (e) => {
+        state.date = e.target.value || '2026-10-23';
+        state.weekLabel = `Week of ${state.date}`;
+        renderAll();
+      });
+
+      document.getElementById('niftyIndexInput').addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        if (!isNaN(val)) {
+          state.nifty = val;
+          renderAll();
+        }
+      });
+
+      // Lumpsum & SIP inputs
+      document.getElementById('lumpsumAmountInput').addEventListener('input', (e) => {
+        state.lumpsum = parseFloat(e.target.value) || 0;
+        renderAll();
+      });
+
+      document.getElementById('sipAmountInput').addEventListener('input', (e) => {
+        state.sip = parseFloat(e.target.value) || 0;
+        renderAll();
+      });
+
+      // Language Switchers
+      const langBtns = {
+        bilingual: document.getElementById('langBilingualBtn'),
+        en: document.getElementById('langEnBtn'),
+        bn: document.getElementById('langBnBtn')
+      };
+      function setLang(mode) {
+        state.lang = mode;
+        Object.keys(langBtns).forEach(k => {
+          if (k === mode) {
+            langBtns[k].className = 'px-2.5 py-1 text-xs font-semibold rounded-md bg-white text-slate-900 shadow-sm transition';
+          } else {
+            langBtns[k].className = 'px-2.5 py-1 text-xs font-semibold rounded-md text-slate-600 hover:text-slate-900 transition';
+          }
+        });
+        renderAll();
+      }
+      langBtns.bilingual.addEventListener('click', () => setLang('bilingual'));
+      langBtns.en.addEventListener('click', () => setLang('en'));
+      langBtns.bn.addEventListener('click', () => setLang('bn'));
+
+      // 5-Factor vs 3-Factor Mode Switcher
+      const btn5 = document.getElementById('mode5MetricBtn');
+      const btn3 = document.getElementById('mode3MetricBtn');
+      btn5.addEventListener('click', () => {
+        state.modelMode = '5metric';
+        btn5.className = 'px-2.5 py-1 text-xs font-semibold rounded-md bg-white text-teal-800 shadow-sm transition';
+        btn3.className = 'px-2.5 py-1 text-xs font-semibold rounded-md text-slate-600 hover:text-slate-900 transition';
+        renderAll();
+      });
+      btn3.addEventListener('click', () => {
+        state.modelMode = '3metric';
+        btn3.className = 'px-2.5 py-1 text-xs font-semibold rounded-md bg-white text-teal-800 shadow-sm transition';
+        btn5.className = 'px-2.5 py-1 text-xs font-semibold rounded-md text-slate-600 hover:text-slate-900 transition';
+        renderAll();
+      });
+
+      // Historical Presets
+      function applyPreset(presetKey) {
+        const p = PRESETS[presetKey];
+        if (!p) return;
+        state.weekLabel = p.label;
+        state.date = p.date;
+        state.nifty = p.nifty;
+        state.pe = p.pe;
+        state.pb = p.pb;
+        state.dy = p.dy;
+        state.vix = p.vix;
+        state.buffett = p.buffett;
+
+        document.getElementById('weekDateInput').value = p.date;
+        document.getElementById('niftyIndexInput').value = p.nifty;
+        document.getElementById('peInputNumber').value = p.pe;
+        document.getElementById('peSlider').value = clamp(p.pe, 14, 34);
+        document.getElementById('pbInputNumber').value = p.pb;
+        document.getElementById('pbSlider').value = clamp(p.pb, 2.0, 5.0);
+        document.getElementById('dyInputNumber').value = p.dy;
+        document.getElementById('dySlider').value = clamp(p.dy, 0.8, 2.0);
+        document.getElementById('vixInputNumber').value = p.vix;
+        document.getElementById('vixSlider').value = clamp(p.vix, 10, 28);
+        document.getElementById('buffettInputNumber').value = p.buffett;
+        document.getElementById('buffettSlider').value = clamp(p.buffett, 80, 165);
+
+        renderAll();
+      }
+
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          applyPreset(btn.getAttribute('data-preset'));
+        });
+      });
+
+      document.getElementById('resetBaselineBtn').addEventListener('click', () => {
+        applyPreset('oct2026');
+        showToast('Reset to 23 Oct 2026 Live Market Baseline');
+      });
+
+      // Save Current Week to Log
+      document.getElementById('saveWeekLogBtn').addEventListener('click', () => {
+        const res = computeAllScores();
+        const entry = {
+          date: state.date,
+          nifty: state.nifty,
+          pe: state.pe,
+          pb: state.pb,
+          dy: state.dy,
+          vix: state.vix,
+          buffett: state.buffett,
+          score: res.composite
+        };
+        const existingIdx = state.weeklyLog.findIndex(item => item.date === state.date);
+        if (existingIdx >= 0) {
+          state.weeklyLog[existingIdx] = entry;
+        } else {
+          state.weeklyLog.push(entry);
+          state.weeklyLog.sort((a, b) => a.date.localeCompare(b.date));
+        }
+        try {
+          localStorage.setItem('takapoisa_weekly_mood_log_v1', JSON.stringify(state.weeklyLog));
+        } catch (e) {}
+        renderAll();
+        showToast(`Logged week ${state.date} (${res.zone.nameEn} · Score ${res.composite})`);
+      });
+
+      // Copy Weekly WhatsApp Client Advisory Note
+      document.getElementById('copyWhatsappBtn').addEventListener('click', () => {
+        const res = computeAllScores();
+        const z = res.zone;
+        const text = [
+          `📊 *TAKAPOISA WEEKLY MARKET MOOD UPDATE (টাকা পয়সা সাপ্তাহিক মার্কেট মুড)*`,
+          `📅 Week: ${state.date} | Nifty 50: ${Number(state.nifty).toLocaleString('en-IN')}`,
+          ``,
+          `🎯 *Current Market Mood:* *${z.nameEn} (${z.nameBn})*`,
+          `📈 *Composite Mood Score:* ${res.composite.toFixed(1)} / 100`,
+          `• Nifty 50 P/E: ${state.pe} (10Y Avg: 23.25)`,
+          `• Nifty 50 P/B: ${state.pb} (10Y Avg: 3.62)`,
+          `• Dividend Yield: ${state.dy}% | India VIX: ${state.vix}`,
+          ``,
+          `💡 *Suggested Fresh Allocation:* Equity ${z.alloc.equity}% | SIF/Hybrid ${z.alloc.hybrid}% | Debt/FD ${z.alloc.debt}%`,
+          `✅ *Guidance:* ${z.headlineEn}`,
+          `🇧🇩 *নির্দেশিকা:* ${z.headlineBn}`,
+          ``,
+          `— *Rasbihari Sarkar*`,
+          `AMFI Reg. MFD & SIF Distributor (ARN-160311) · APMI Reg. PMS Distributor (APRN05577)`,
+          `📞 +91 98007 09085 | ✉️ sales@takapoisa.in | 🌐 https://www.takapoisa.in/`,
+          `_Mutual fund investments are subject to market risks. Read all scheme related documents carefully._`
+        ].join('\n');
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => {
+            showToast('Copied bilingual WhatsApp client update to clipboard!');
+          }).catch(() => {
+            fallbackCopy(text);
+          });
+        } else {
+          fallbackCopy(text);
+        }
+      });
+
+      function fallbackCopy(text) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand('copy');
+          showToast('Copied bilingual WhatsApp client update to clipboard!');
+        } catch (err) {
+          showToast('Ready to share!');
+        }
+        document.body.removeChild(ta);
+      }
+
+      // Export CSV
+      document.getElementById('exportCsvBtn').addEventListener('click', () => {
+        const headers = ['Date,Nifty_50,Nifty_PE,Nifty_PB,Dividend_Yield_Pct,India_VIX,Buffett_Indicator_Pct,Composite_Score,Mood_Zone_EN,Mood_Zone_BN'];
+        const rows = getActiveChartDataset().map(r => {
+          const z = getZoneByScore(r.score);
+          return `${r.date},${r.nifty},${r.pe},${r.pb},${r.dy},${r.vix},${r.buffett},${r.score},"${z.nameEn}","${z.shortBn}"`;
+        });
+        const csvContent = headers.concat(rows).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Takapoisa_Weekly_Market_Mood_${state.date}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showToast('Downloaded Weekly Market Mood CSV!');
+      });
+
+      // Timeframe Switcher Buttons (Weekly, 5Y, 10Y, 20Y, 30Y)
+      const tfButtons = {
+        weekly: document.getElementById('tfWeeklyBtn'),
+        '5y': document.getElementById('tf5YBtn'),
+        '10y': document.getElementById('tf10YBtn'),
+        '20y': document.getElementById('tf20YBtn'),
+        '30y': document.getElementById('tf30YBtn')
+      };
+      function setChartTimeframe(tf) {
+        state.chartTimeframe = tf;
+        Object.keys(tfButtons).forEach(k => {
+          if (!tfButtons[k]) return;
+          if (k === tf) {
+            tfButtons[k].className = 'px-2 py-1 text-[11px] font-semibold rounded-md bg-white text-teal-800 shadow-sm transition';
+          } else {
+            tfButtons[k].className = 'px-2 py-1 text-[11px] font-semibold rounded-md text-slate-600 hover:text-slate-900 transition';
+          }
+        });
+        renderAll();
+      }
+      Object.keys(tfButtons).forEach(k => {
+        if (tfButtons[k]) {
+          tfButtons[k].addEventListener('click', () => setChartTimeframe(k));
+        }
+      });
+
+      // Clickable 30-Year Cycle Landmark Rows
+      document.querySelectorAll('[data-cycle-preset]').forEach(row => {
+        row.addEventListener('click', () => {
+          applyPreset(row.getAttribute('data-cycle-preset'));
+          showToast('Loaded historical cycle landmark into calculator!');
+        });
+      });
+
+      // Print / Save PDF
+      document.getElementById('printReportBtn').addEventListener('click', () => {
+        window.print();
+      });
+
+      // Load latest weekly data written by scripts/fetch_nse.py
+      fetch('data/weekly.json', { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(log => {
+          if (!Array.isArray(log) || !log.length) return;
+          state.weeklyLog = log;
+          const L = log[log.length - 1];
+          const d = new Date(L.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          PRESETS.live = { label: d + ' (Auto-updated from NSE)', date: L.date, nifty: L.nifty, pe: L.pe, pb: L.pb, dy: L.dy, vix: L.vix, buffett: L.buffett };
+          applyPreset('live');
+        })
+        .catch(() => {});
+
+      // Initial render
+      renderAll();
+    });
+  </script>
+</body>
+</html>
